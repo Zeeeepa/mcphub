@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
 import fs from 'fs/promises';
 import path from 'path';
-import { loadSettings, saveSettings, getSettingsPath, clearSettingsCache } from '../config/index.js';
+import { getSettingsPath, clearSettingsCache } from '../config/index.js';
 import { notifyToolChanged } from '../services/mcpService.js';
-import { ApiResponse } from '../types/index.js';
 
 const WORKSPACE_DIR = process.env.WORKSPACE_DIR || '/app/PROJECTS';
 

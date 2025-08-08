@@ -21,14 +21,7 @@ interface BuildResult {
   error?: string;
 }
 
-interface ServerRegistration {
-  name: string;
-  command: string;
-  args: string[];
-  env?: Record<string, string>;
-  workingDir: string;
-  type: 'stdio';
-}
+// Removed unused interface ServerRegistration
 
 interface SmokeRunResult {
   success: boolean;
@@ -737,12 +730,12 @@ export class McpBuilderServer {
         stdio: ['pipe', 'pipe', 'pipe'],
       });
 
-      let stdout = '';
+      let _stdout = '';
       let stderr = '';
 
       child.stdout?.on('data', (data) => {
         const output = data.toString();
-        stdout += output;
+        _stdout += output;
         logs.push(`[${command}] ${output.trim()}`);
       });
 

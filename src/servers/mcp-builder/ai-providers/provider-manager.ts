@@ -211,10 +211,8 @@ export class AIProviderManager {
     }
 
     // Task-specific provider selection
-    const availableProviders = Array.from(this.providers.entries());
-    
     switch (task) {
-      case 'analysis':
+      case 'analysis': {
         // Prefer providers with larger context windows for analysis
         const analysisOrder = ['gemini', 'openrouter', 'openai'];
         for (const name of analysisOrder) {
@@ -222,8 +220,9 @@ export class AIProviderManager {
           if (provider) return provider;
         }
         break;
+      }
         
-      case 'modification':
+      case 'modification': {
         // Prefer more reliable providers for code modification
         const modificationOrder = ['openai', 'openrouter', 'gemini'];
         for (const name of modificationOrder) {
@@ -231,6 +230,7 @@ export class AIProviderManager {
           if (provider) return provider;
         }
         break;
+      }
     }
 
     // Fallback to any available provider

@@ -5,11 +5,6 @@
 
 import { BaseAIProvider, AIProviderConfig, AIMessage, AIResponse } from './base-provider.js';
 
-interface OpenRouterMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
 interface OpenRouterResponse {
   choices: Array<{
     message: {

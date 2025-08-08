@@ -5,11 +5,6 @@
 
 import { BaseAIProvider, AIProviderConfig, AIMessage, AIResponse } from './base-provider.js';
 
-interface OpenAIMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
 interface OpenAIResponse {
   choices: Array<{
     message: {
