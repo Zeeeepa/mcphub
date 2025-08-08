@@ -48,6 +48,18 @@ import { getAllLogs, clearLogs, streamLogs } from '../controllers/logController.
 import { getRuntimeConfig, getPublicConfig } from '../controllers/configController.js';
 import { callTool } from '../controllers/toolController.js';
 import { uploadDxtFile, uploadMiddleware } from '../controllers/dxtController.js';
+import {
+  getRawSettings,
+  updateRawSettings,
+  reloadSettings,
+  getProjects,
+  getProjectSettings,
+  updateProjectSettings,
+  getGlobalSecrets,
+  updateGlobalSecrets,
+  getProjectSecrets,
+  updateProjectSecrets,
+} from '../controllers/settingsController.js';
 import { auth } from '../middlewares/auth.js';
 
 const router = express.Router();
@@ -93,6 +105,22 @@ export const initRoutes = (app: express.Application): void => {
 
   // DXT upload routes
   router.post('/dxt/upload', uploadMiddleware, uploadDxtFile);
+
+  // Settings management endpoints
+  router.get('/api/settings/raw', getRawSettings);
+  router.put('/api/settings/raw', updateRawSettings);
+  router.post('/api/settings/reload', reloadSettings);
+
+  // Project management endpoints
+  router.get('/api/projects', getProjects);
+  router.get('/api/projects/:projectName/settings', getProjectSettings);
+  router.put('/api/projects/:projectName/settings', updateProjectSettings);
+
+  // Secrets management endpoints
+  router.get('/api/secrets', getGlobalSecrets);
+  router.put('/api/secrets', updateGlobalSecrets);
+  router.get('/api/projects/:projectName/secrets', getProjectSecrets);
+  router.put('/api/projects/:projectName/secrets', updateProjectSecrets);
 
   // Market routes
   router.get('/market/servers', getAllMarketServers);
