@@ -65,6 +65,11 @@ import {
   createOrUpdateVariable,
   removeVariable,
 } from '../controllers/variablesController.js';
+import {
+  installFromGitHubRepo,
+  checkInstallationPrerequisites,
+  validateGitHubUrl,
+} from '../controllers/installationController.js';
 import { auth } from '../middlewares/auth.js';
 
 const router = express.Router();
@@ -117,6 +122,11 @@ export const initRoutes = (app: express.Application): void => {
   router.post('/variables', createOrUpdateVariable);
   router.put('/variables/:key', createOrUpdateVariable);
   router.delete('/variables/:key', removeVariable);
+
+  // Installation routes
+  router.post('/install/github', installFromGitHubRepo);
+  router.get('/install/prerequisites', checkInstallationPrerequisites);
+  router.post('/install/validate-url', validateGitHubUrl);
 
   // Market routes
   router.get('/market/servers', getAllMarketServers);
