@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Server } from '@/types'
-import { ChevronDown, ChevronRight, AlertCircle, Copy, Check } from 'lucide-react'
+import { ChevronDown, ChevronRight, AlertCircle, Copy, Check, Github, Trash2 } from 'lucide-react'
 import { StatusBadge } from '@/components/ui/Badge'
 import ToolCard from '@/components/ui/ToolCard'
 import DeleteDialog from '@/components/ui/DeleteDialog'
 import { useToast } from '@/contexts/ToastContext'
+import { apiDelete } from '@/utils/fetchInterceptor'
 
 interface ServerCardProps {
   server: Server
@@ -23,6 +24,7 @@ const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh }: ServerCar
   const [isToggling, setIsToggling] = useState(false)
   const [showErrorPopover, setShowErrorPopover] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [isUninstalling, setIsUninstalling] = useState(false)
   const errorPopoverRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -46,6 +48,28 @@ const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh }: ServerCar
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation()
     onEdit(server)
+  }
+
+  const handleUninstall = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    if (!server.installed) return
+    
+    setIsUninstalling(true)
+    try {
+      const response = await apiDelete(`/servers/github/${server.name}/uninstall`)
+      if (response.success) {
+        showToast(`Successfully uninstalled "${server.name}"`, 'success')
+        onRefresh?.()
+      } else {
+        showToast(response.message || 'Failed to uninstall server', 'error')
+      }
+    } catch (error) {
+      console.error('Error uninstalling server:', error)
+      showToast('Failed to uninstall server', 'error')
+    } finally {
+      setIsUninstalling(false)
+    }
   }
 
   const handleToggle = async (e: React.MouseEvent) => {
@@ -128,7 +152,7 @@ const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh }: ServerCar
 
   return (
     <>
-      <div className={`bg-white shadow rounded-lg p-6 mb-6 page-card transition-all duration-200 ${server.enabled === false ? 'opacity-60' : ''}`}>
+      <div className={`${server.installed ? 'bg-yellow-50 border-yellow-200' : 'bg-white'} shadow rounded-lg p-6 mb-6 page-card transition-all duration-200 ${server.enabled === false ? 'opacity-60' : ''} ${server.installed ? 'border-2' : 'border'}`}>
         <div
           className="flex justify-between items-center cursor-pointer"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -144,6 +168,14 @@ const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh }: ServerCar
               </svg>
               <span>{server.tools?.length || 0} {t('server.tools')}</span>
             </div>
+
+            {/* GitHub installation badge */}
+            {server.installed && (
+              <div className="flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
+                <Github className="w-4 h-4 mr-1" />
+                <span>GitHub</span>
+              </div>
+            )}
 
             {server.error && (
               <div className="relative">
@@ -224,6 +256,25 @@ const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh }: ServerCar
                 }
               </button>
             </div>
+            {server.installed && (
+              <button
+                onClick={handleUninstall}
+                disabled={isUninstalling}
+                className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 text-sm btn-secondary flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isUninstalling ? (
+                  <>
+                    <div className="animate-spin h-3 w-3 border border-yellow-600 border-t-transparent rounded-full"></div>
+                    <span>Uninstalling...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} />
+                    <span>Uninstall</span>
+                  </>
+                )}
+              </button>
+            )}
             <button
               onClick={handleRemove}
               className="px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 text-sm btn-danger"

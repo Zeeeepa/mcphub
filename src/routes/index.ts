@@ -11,6 +11,8 @@ import {
   toggleTool,
   updateToolDescription,
   updateSystemConfig,
+  installGitHubServer,
+  uninstallGitHubServer,
 } from '../controllers/serverController.js';
 import {
   getGroups,
@@ -75,6 +77,10 @@ export const initRoutes = (app: express.Application): void => {
   router.post('/servers/:serverName/tools/:toolName/toggle', toggleTool);
   router.put('/servers/:serverName/tools/:toolName/description', updateToolDescription);
   router.put('/system-config', updateSystemConfig);
+
+  // GitHub Installation routes
+  router.post('/servers/github/install', installGitHubServer);
+  router.delete('/servers/github/:serverName/uninstall', uninstallGitHubServer);
 
   // Group management routes
   router.get('/groups', getGroups);
