@@ -8,6 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/Dashboard';
 import ServersPage from './pages/ServersPage';
+import VariablesPage from './pages/VariablesPage';
 import GroupsPage from './pages/GroupsPage';
 import UsersPage from './pages/UsersPage';
 import SettingsPage from './pages/SettingsPage';
@@ -32,6 +33,7 @@ function App() {
                 <Route element={<MainLayout />}>
                   <Route path="/" element={<DashboardPage />} />
                   <Route path="/servers" element={<ServersPage />} />
+                  <Route path="/variables" element={<VariablesPage />} />
                   <Route path="/groups" element={<GroupsPage />} />
                   <Route path="/users" element={<UsersPage />} />
                   <Route path="/market" element={<MarketPage />} />
