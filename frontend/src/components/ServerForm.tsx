@@ -72,7 +72,8 @@ const ServerForm = ({ onSubmit, onCancel, initialData = null, modalTitle, formEr
       schema: '',
       version: '3.1.0',
       securityType: 'none'
-    }
+    },
+    workingDir: (initialData && initialData.config && initialData.config.workingDir) || '',
   })
 
   const [envVars, setEnvVars] = useState<EnvVar[]>(
@@ -248,6 +249,7 @@ const ServerForm = ({ onSubmit, onCancel, initialData = null, modalTitle, formEr
                 command: formData.command,
                 args: formData.args,
                 env: Object.keys(env).length > 0 ? env : undefined,
+                ...(formData.workingDir ? { workingDir: formData.workingDir } : {}),
               }
           ),
           ...(Object.keys(options).length > 0 ? { options } : {})
@@ -794,6 +796,25 @@ const ServerForm = ({ onSubmit, onCancel, initialData = null, modalTitle, formEr
                   </button>
                 </div>
               ))}
+            </div>
+
+            {/* Working Directory Field for STDIO servers */}
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="workingDir">
+                Working Directory (Optional)
+              </label>
+              <input
+                type="text"
+                name="workingDir"
+                id="workingDir"
+                value={formData.workingDir}
+                onChange={handleInputChange}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline form-input"
+                placeholder="e.g.: /app/PROJECTS/my-server"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Directory where the server process will run. Leave empty to use default.
+              </p>
             </div>
           </>
         )}

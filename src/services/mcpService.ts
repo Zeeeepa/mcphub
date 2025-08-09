@@ -12,6 +12,7 @@ import { getServersInGroup, getServerConfigInGroup } from './groupService.js';
 import { saveToolsAsVectorEmbeddings, searchToolsByVector } from './vectorSearchService.js';
 import { OpenAPIClient } from '../clients/openapi.js';
 import { getDataService } from './services.js';
+import { McpBuilderServer } from '../servers/mcp-builder/index.js';
 
 const servers: { [sessionId: string]: Server } = {};
 
@@ -197,6 +198,7 @@ const createTransportFromConfig = (name: string, conf: ServerConfig): any => {
       command: conf.command,
       args: replaceEnvVars(conf.args) as string[],
       env: env,
+      cwd: conf.workingDir,
       stderr: 'pipe',
     });
     transport.stderr?.on('data', (data) => {
@@ -519,6 +521,9 @@ export const initializeClientsFromSettings = async (isInit: boolean): Promise<Se
 // Register all MCP tools
 export const registerAllTools = async (isInit: boolean): Promise<void> => {
   await initializeClientsFromSettings(isInit);
+  
+  // Register built-in mcp-builder server
+  await registerBuiltInMcpBuilder();
 };
 
 // Get all server information
@@ -1011,6 +1016,34 @@ export const handleCallToolRequest = async (request: any, extra: any) => {
         throw new Error(`Tool '${toolName}' not found on server '${targetServerInfo.name}'`);
       }
 
+      // Handle built-in servers (like mcp-builder)
+      if (targetServerInfo.builderServer) {
+        const builderServer = targetServerInfo.builderServer;
+        
+        // Remove server prefix from tool name if present
+        const cleanToolName = toolName.startsWith(`${targetServerInfo.name}-`)
+          ? toolName.replace(`${targetServerInfo.name}-`, '')
+          : toolName;
+
+        console.log(
+          `Invoking built-in tool '${cleanToolName}' on server '${targetServerInfo.name}' with arguments: ${JSON.stringify(toolArgs)}`,
+        );
+
+        const result = await builderServer.getServer().request(
+          {
+            method: 'tools/call',
+            params: {
+              name: cleanToolName,
+              arguments: toolArgs && Object.keys(toolArgs).length > 0 ? toolArgs : request.params.arguments || {},
+            },
+          },
+          CallToolRequestSchema
+        );
+
+        console.log(`Built-in tool invocation result: ${JSON.stringify(result)}`);
+        return result;
+      }
+
       // Handle OpenAPI servers differently
       if (targetServerInfo.openApiClient) {
         // For OpenAPI servers, use the OpenAPI client
@@ -1157,4 +1190,49 @@ export const createMcpServer = (name: string, version: string, group?: string): 
   server.setRequestHandler(ListToolsRequestSchema, handleListToolsRequest);
   server.setRequestHandler(CallToolRequestSchema, handleCallToolRequest);
   return server;
+};
+
+// Register built-in mcp-builder server
+const registerBuiltInMcpBuilder = async (): Promise<void> => {
+  const builderServerName = 'mcp-builder';
+  
+  // Check if already registered
+  const existingServer = serverInfos.find(s => s.name === builderServerName);
+  if (existingServer) {
+    return; // Already registered
+  }
+
+  try {
+    const mcpBuilder = new McpBuilderServer();
+    const builderServer = mcpBuilder.getServer();
+    
+    // Get tools from the builder server
+    const toolsResponse = await builderServer.request(
+      { method: 'tools/list' },
+      ListToolsRequestSchema
+    );
+
+    const tools = toolsResponse.tools.map((tool) => ({
+      name: `${builderServerName}-${tool.name}`,
+      description: tool.description || '',
+      inputSchema: tool.inputSchema || {},
+    }));
+
+    // Add to server infos
+    serverInfos.push({
+      name: builderServerName,
+      owner: 'system',
+      status: 'connected',
+      error: null,
+      tools,
+      createTime: Date.now(),
+      enabled: true,
+      // Store the builder server instance for tool calls
+      builderServer: mcpBuilder,
+    });
+
+    console.log(`Built-in mcp-builder server registered with ${tools.length} tools`);
+  } catch (error) {
+    console.error('Failed to register built-in mcp-builder server:', error);
+  }
 };

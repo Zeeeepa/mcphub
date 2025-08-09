@@ -179,6 +179,7 @@ export interface ServerConfig {
   keepAliveInterval?: number; // Keep-alive ping interval in milliseconds (default: 60000ms for SSE servers)
   tools?: Record<string, { enabled: boolean; description?: string }>; // Tool-specific configurations with enable/disable state and custom descriptions
   options?: Partial<Pick<RequestOptions, 'timeout' | 'resetTimeoutOnProgress' | 'maxTotalTimeout'>>; // MCP request options configuration
+  workingDir?: string; // Working directory for the server process
   // OpenAPI specific configuration
   openapi?: {
     url?: string; // OpenAPI specification URL
@@ -230,6 +231,7 @@ export interface ServerInfo {
   client?: Client; // Client instance for communication (MCP clients)
   transport?: SSEClientTransport | StdioClientTransport | StreamableHTTPClientTransport; // Transport mechanism used
   openApiClient?: any; // OpenAPI client instance for openapi type servers
+  builderServer?: any; // Built-in server instance (for mcp-builder)
   options?: RequestOptions; // Options for requests
   createTime: number; // Timestamp of when the server was created
   enabled?: boolean; // Flag to indicate if the server is enabled
