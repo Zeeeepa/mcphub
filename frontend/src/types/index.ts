@@ -177,6 +177,12 @@ export interface EnvVar {
   value: string;
 }
 
+// Saved variable types
+export interface SavedVariable {
+  key: string;
+  value: string;
+}
+
 // Form data types
 export interface ServerFormData {
   name: string;

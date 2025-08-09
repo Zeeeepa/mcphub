@@ -164,6 +164,7 @@ export interface McpSettings {
   groups?: IGroup[]; // Array of server groups
   systemConfig?: SystemConfig; // System-wide configuration settings
   userConfigs?: Record<string, UserConfig>; // User-specific configurations
+  savedVariables?: Record<string, Record<string, string>>; // User-scoped saved variables: { username: { key: value } }
 }
 
 // Configuration details for an individual server
