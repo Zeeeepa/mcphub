@@ -8,6 +8,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { generateRandomKey } from '@/utils/key';
 import { PermissionChecker } from '@/components/PermissionChecker';
 import { PERMISSIONS } from '@/constants/permissions';
+import VariablesSection from '@/components/VariablesSection';
 
 const SettingsPage: React.FC = () => {
   const { t } = useTranslation();
@@ -47,6 +48,8 @@ const SettingsPage: React.FC = () => {
     title: 'MCPHub',
     baseUrl: 'https://api.mcprouter.to/v1',
   });
+
+  const [variablesSectionOpen, setVariablesSectionOpen] = useState(false);
 
   const {
     routingConfig,
@@ -659,6 +662,14 @@ const SettingsPage: React.FC = () => {
           )}
         </div>
       </PermissionChecker>
+
+      {/* Saved Variables */}
+      <div className="bg-white shadow rounded-lg mb-6 dashboard-card">
+        <VariablesSection 
+          isOpen={variablesSectionOpen} 
+          onToggle={() => setVariablesSectionOpen(!variablesSectionOpen)} 
+        />
+      </div>
 
       {/* Change Password */}
       <div className="bg-white shadow rounded-lg py-4 px-6 mb-6 dashboard-card">
