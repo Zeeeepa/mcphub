@@ -113,6 +113,11 @@ export interface ServerConfig {
     version?: string; // OpenAPI version (default: '3.1.0')
     security?: OpenAPISecurityConfig; // Security configuration for API calls
   };
+  // GitHub installation tracking
+  isInstalled?: boolean; // Flag to indicate if this server was installed from GitHub
+  sourceRepository?: string; // GitHub repository URL this server was installed from
+  projectPath?: string; // Local path in PROJECTS/ folder where the repository is cloned
+  installDate?: string; // ISO date string when the server was installed
 }
 
 // OpenAPI Security Configuration
@@ -173,6 +178,12 @@ export interface Group {
 
 // Environment variable types
 export interface EnvVar {
+  key: string;
+  value: string;
+}
+
+// Saved variable types
+export interface SavedVariable {
   key: string;
   value: string;
 }

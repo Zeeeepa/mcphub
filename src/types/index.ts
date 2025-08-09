@@ -164,6 +164,7 @@ export interface McpSettings {
   groups?: IGroup[]; // Array of server groups
   systemConfig?: SystemConfig; // System-wide configuration settings
   userConfigs?: Record<string, UserConfig>; // User-specific configurations
+  savedVariables?: Record<string, Record<string, string>>; // User-scoped saved variables: { username: { key: value } }
 }
 
 // Configuration details for an individual server
@@ -186,6 +187,11 @@ export interface ServerConfig {
     version?: string; // OpenAPI version (default: '3.1.0')
     security?: OpenAPISecurityConfig; // Security configuration for API calls
   };
+  // GitHub installation tracking
+  isInstalled?: boolean; // Flag to indicate if this server was installed from GitHub
+  sourceRepository?: string; // GitHub repository URL this server was installed from
+  projectPath?: string; // Local path in PROJECTS/ folder where the repository is cloned
+  installDate?: string; // ISO date string when the server was installed
 }
 
 // OpenAPI Security Configuration

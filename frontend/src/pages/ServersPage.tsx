@@ -7,6 +7,7 @@ import AddServerForm from '@/components/AddServerForm';
 import EditServerForm from '@/components/EditServerForm';
 import { useServerData } from '@/hooks/useServerData';
 import DxtUploadForm from '@/components/DxtUploadForm';
+import InstallDialog from '@/components/InstallDialog';
 
 const ServersPage: React.FC = () => {
   const { t } = useTranslation();
@@ -25,6 +26,8 @@ const ServersPage: React.FC = () => {
   const [editingServer, setEditingServer] = useState<Server | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDxtUpload, setShowDxtUpload] = useState(false);
+  const [showInstallDialog, setShowInstallDialog] = useState(false);
+  const [isInstalling, setIsInstalling] = useState(false);
 
   const handleEditClick = async (server: Server) => {
     const fullServerData = await handleServerEdit(server);
@@ -55,6 +58,55 @@ const ServersPage: React.FC = () => {
     triggerRefresh();
   };
 
+  const handleInstall = async (url: string) => {
+    setIsInstalling(true);
+    try {
+      const response = await fetch('/api/servers/install', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ url }),
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Installation failed');
+      }
+
+      // Success - refresh servers and close dialog
+      triggerRefresh();
+      setShowInstallDialog(false);
+    } catch (error: any) {
+      // Re-throw error to be handled by InstallDialog
+      throw error;
+    } finally {
+      setIsInstalling(false);
+    }
+  };
+
+  const handleUninstall = async (serverName: string) => {
+    try {
+      const response = await fetch(`/api/servers/uninstall/${encodeURIComponent(serverName)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Uninstallation failed');
+      }
+
+      // Success - refresh servers
+      triggerRefresh();
+    } catch (error: any) {
+      setError(error.message || 'Uninstallation failed');
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
@@ -77,6 +129,15 @@ const ServersPage: React.FC = () => {
               <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z" />
             </svg>
             {t('nav.market')}
+          </button>
+          <button
+            onClick={() => setShowInstallDialog(true)}
+            className="px-4 py-2 bg-purple-100 text-purple-800 rounded hover:bg-purple-200 flex items-center btn-primary transition-all duration-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+            {t('install.install', 'Install')}
           </button>
           <AddServerForm onAdd={handleServerAdd} />
           <button
@@ -151,6 +212,7 @@ const ServersPage: React.FC = () => {
               onEdit={handleEditClick}
               onToggle={handleServerToggle}
               onRefresh={triggerRefresh}
+              onUninstall={handleUninstall}
             />
           ))}
         </div>
@@ -170,6 +232,13 @@ const ServersPage: React.FC = () => {
           onCancel={() => setShowDxtUpload(false)}
         />
       )}
+
+      <InstallDialog
+        isOpen={showInstallDialog}
+        onClose={() => setShowInstallDialog(false)}
+        onInstall={handleInstall}
+        isLoading={isInstalling}
+      />
     </div>
   );
 };

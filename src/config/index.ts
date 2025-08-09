@@ -90,18 +90,19 @@ export const getSettingsCacheInfo = (): { hasCache: boolean } => {
   };
 };
 
-export function replaceEnvVars(input: Record<string, any>): Record<string, any>;
-export function replaceEnvVars(input: string[] | undefined): string[];
-export function replaceEnvVars(input: string): string;
+export function replaceEnvVars(input: Record<string, any>, user?: IUser): Record<string, any>;
+export function replaceEnvVars(input: string[] | undefined, user?: IUser): string[];
+export function replaceEnvVars(input: string, user?: IUser): string;
 export function replaceEnvVars(
   input: Record<string, any> | string[] | string | undefined,
+  user?: IUser,
 ): Record<string, any> | string[] | string {
   // Handle object input
   if (input && typeof input === 'object' && !Array.isArray(input)) {
     const res: Record<string, string> = {};
     for (const [key, value] of Object.entries(input)) {
       if (typeof value === 'string') {
-        res[key] = expandEnvVars(value);
+        res[key] = expandEnvVarsWithSaved(value, user);
       } else {
         res[key] = String(value);
       }
@@ -111,12 +112,12 @@ export function replaceEnvVars(
 
   // Handle array input
   if (Array.isArray(input)) {
-    return input.map((item) => expandEnvVars(item));
+    return input.map((item) => expandEnvVarsWithSaved(item, user));
   }
 
   // Handle string input
   if (typeof input === 'string') {
-    return expandEnvVars(input);
+    return expandEnvVarsWithSaved(input, user);
   }
 
   // Handle undefined/null array input
@@ -136,6 +137,65 @@ export const expandEnvVars = (value: string): string => {
   // Also replace $VAR format (common on Unix-like systems)
   result = result.replace(/\$([A-Z_][A-Z0-9_]*)/g, (_, key) => process.env[key] || '');
   return result;
+};
+
+// Enhanced version that checks saved variables first, then falls back to env vars
+export const expandEnvVarsWithSaved = (value: string, user?: IUser): string => {
+  if (typeof value !== 'string') {
+    return String(value);
+  }
+
+  // Get saved variables for the user
+  const savedVariables = getSavedVariables(user?.username);
+
+  // Replace ${VAR} format - check saved variables first, then process.env
+  let result = value.replace(/\$\{([^}]+)\}/g, (_, key) => {
+    return savedVariables[key] || process.env[key] || '';
+  });
+  
+  // Also replace $VAR format (common on Unix-like systems)
+  result = result.replace(/\$([A-Z_][A-Z0-9_]*)/g, (_, key) => {
+    return savedVariables[key] || process.env[key] || '';
+  });
+  
+  return result;
+};
+
+// Get saved variables for a specific user
+export const getSavedVariables = (username?: string): Record<string, string> => {
+  if (!username) {
+    return {};
+  }
+
+  try {
+    const settings = loadSettings();
+    return settings.savedVariables?.[username] || {};
+  } catch (error) {
+    console.error('Error loading saved variables:', error);
+    return {};
+  }
+};
+
+// Save variables for a specific user
+export const setSavedVariables = (username: string, variables: Record<string, string>): boolean => {
+  try {
+    const settings = loadSettings();
+    
+    // Initialize savedVariables if it doesn't exist
+    if (!settings.savedVariables) {
+      settings.savedVariables = {};
+    }
+    
+    // Set variables for the user
+    settings.savedVariables[username] = variables;
+    
+    // Save settings
+    saveSettings(settings);
+    return true;
+  } catch (error) {
+    console.error('Error saving variables:', error);
+    return false;
+  }
 };
 
 export default defaultConfig;

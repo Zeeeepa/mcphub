@@ -4,7 +4,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { ServerInfo, ServerConfig, ToolInfo } from '../types/index.js';
+import { ServerInfo, ServerConfig, ToolInfo, IUser } from '../types/index.js';
 import { loadSettings, saveSettings, expandEnvVars, replaceEnvVars } from '../config/index.js';
 import config from '../config/index.js';
 import { getGroup } from './sseService.js';
@@ -142,7 +142,7 @@ export const cleanupAllServers = (): void => {
 };
 
 // Helper function to create transport based on server configuration
-const createTransportFromConfig = (name: string, conf: ServerConfig): any => {
+const createTransportFromConfig = (name: string, conf: ServerConfig, user?: any): any => {
   let transport;
 
   if (conf.type === 'streamable-http') {
@@ -169,7 +169,7 @@ const createTransportFromConfig = (name: string, conf: ServerConfig): any => {
     // Stdio transport
     const env: Record<string, string> = {
       ...(process.env as Record<string, string>),
-      ...replaceEnvVars(conf.env || {}),
+      ...replaceEnvVars(conf.env || {}, user),
     };
     env['PATH'] = expandEnvVars(process.env.PATH as string) || '';
 
@@ -195,7 +195,7 @@ const createTransportFromConfig = (name: string, conf: ServerConfig): any => {
 
     transport = new StdioClientTransport({
       command: conf.command,
-      args: replaceEnvVars(conf.args) as string[],
+      args: replaceEnvVars(conf.args, user) as string[],
       env: env,
       stderr: 'pipe',
     });
@@ -252,7 +252,7 @@ const callToolWithReconnect = async (
             throw new Error(`Server configuration not found for: ${serverInfo.name}`);
           }
 
-          // Recreate transport using helper function
+          // Recreate transport using helper function (no user context available in reconnection)
           const newTransport = createTransportFromConfig(serverInfo.name, conf);
 
           // Create new client
