@@ -1439,12 +1439,12 @@ export class McpBuilderServer {
     }
   }
 
-  private async validateSemantics(code: string, language: string): Promise<any> {
+  private async validateSemantics(_code: string, _language: string): Promise<any> {
     // Semantic validation would check for logical errors, type mismatches, etc.
     return { valid: true, warnings: [] };
   }
 
-  private async validateSecurity(code: string, language: string): Promise<any> {
+  private async validateSecurity(code: string, _language: string): Promise<any> {
     // Security validation would check for common vulnerabilities
     const issues: string[] = [];
     
@@ -1459,7 +1459,7 @@ export class McpBuilderServer {
     return { secure: issues.length === 0, issues };
   }
 
-  private async validatePerformance(code: string, language: string): Promise<any> {
+  private async validatePerformance(code: string, _language: string): Promise<any> {
     // Performance validation would check for inefficient patterns
     const warnings: string[] = [];
     
@@ -1471,7 +1471,7 @@ export class McpBuilderServer {
     return { optimized: warnings.length === 0, warnings };
   }
 
-  private async validateFunctionality(filePath: string): Promise<any> {
+  private async validateFunctionality(_filePath: string): Promise<any> {
     // Functionality validation would run tests or check imports/exports
     return { functional: true, tests: [] };
   }
