@@ -9,6 +9,8 @@ import {
   syncToolEmbedding,
   toggleServerStatus,
 } from '../services/mcpService.js';
+import { substituteVariables } from '../services/variableService.js';
+import { installFromGitHub, uninstallGitHubProject } from '../services/githubInstallService.js';
 import { loadSettings, saveSettings } from '../config/index.js';
 import { syncAllServerToolsEmbeddings } from '../services/vectorSearchService.js';
 import { createSafeJSON } from '../utils/serialization.js';
@@ -135,7 +137,10 @@ export const createServer = async (req: Request, res: Response): Promise<void> =
       config.owner = currentUser?.username || 'admin';
     }
 
-    const result = await addServer(name, config);
+    // Substitute variables in the configuration
+    const configWithSubstitutedVariables = substituteVariables(config);
+
+    const result = await addServer(name, configWithSubstitutedVariables);
     if (result.success) {
       notifyToolChanged();
       res.json({
@@ -278,7 +283,10 @@ export const updateServer = async (req: Request, res: Response): Promise<void> =
       config.owner = currentUser?.username || 'admin';
     }
 
-    const result = await addOrUpdateServer(name, config, true); // Allow override for updates
+    // Substitute variables in the configuration
+    const configWithSubstitutedVariables = substituteVariables(config);
+
+    const result = await addOrUpdateServer(name, configWithSubstitutedVariables, true); // Allow override for updates
     if (result.success) {
       notifyToolChanged();
       res.json({
@@ -736,6 +744,146 @@ export const updateSystemConfig = (req: Request, res: Response): void => {
     res.status(500).json({
       success: false,
       message: 'Internal server error',
+    });
+  }
+};
+
+// GitHub Installation endpoints
+export const installGitHubServer = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { url, name } = req.body;
+
+    if (!url || typeof url !== 'string') {
+      res.status(400).json({
+        success: false,
+        message: 'GitHub URL is required',
+      });
+      return;
+    }
+
+    if (!name || typeof name !== 'string') {
+      res.status(400).json({
+        success: false,
+        message: 'Server name is required',
+      });
+      return;
+    }
+
+    // Install from GitHub
+    const installResult = await installFromGitHub(url);
+    
+    if (!installResult.success) {
+      res.status(400).json({
+        success: false,
+        message: installResult.message || 'Installation failed',
+      });
+      return;
+    }
+
+    // Add server configuration with variable substitution
+    if (installResult.serverConfig) {
+      // Set owner property
+      const currentUser = (req as any).user;
+      installResult.serverConfig.owner = currentUser?.username || 'admin';
+
+      // Add GitHub metadata
+      installResult.serverConfig.githubUrl = url;
+      installResult.serverConfig.serverName = name;
+
+      // Substitute variables in the configuration
+      const configWithSubstitutedVariables = substituteVariables(installResult.serverConfig);
+
+      const result = await addServer(name, configWithSubstitutedVariables);
+      if (result.success) {
+        notifyToolChanged();
+        res.json({
+          success: true,
+          message: `Successfully installed and configured server "${name}" from GitHub`,
+          projectPath: installResult.projectPath,
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: result.message || 'Failed to add server configuration',
+        });
+      }
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Failed to generate server configuration',
+      });
+    }
+  } catch (error) {
+    console.error('GitHub installation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during installation',
+    });
+  }
+};
+
+export const uninstallGitHubServer = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { serverName } = req.params;
+
+    if (!serverName) {
+      res.status(400).json({
+        success: false,
+        message: 'Server name is required',
+      });
+      return;
+    }
+
+    // Get server configuration to find project path
+    const servers = getServersInfo();
+    const server = servers.find(s => s.name === serverName);
+    
+    if (!server) {
+      res.status(404).json({
+        success: false,
+        message: 'Server not found',
+      });
+      return;
+    }
+
+    if (!server.installed || !server.projectPath) {
+      res.status(400).json({
+        success: false,
+        message: 'Server is not a GitHub installation',
+      });
+      return;
+    }
+
+    // Remove server configuration first
+    const removeResult = await removeServer(serverName);
+    if (!removeResult.success) {
+      res.status(400).json({
+        success: false,
+        message: removeResult.message || 'Failed to remove server configuration',
+      });
+      return;
+    }
+
+    // Uninstall GitHub project
+    const uninstallResult = await uninstallGitHubProject(server.projectPath);
+    if (uninstallResult.success) {
+      notifyToolChanged();
+      res.json({
+        success: true,
+        message: `Successfully uninstalled server "${serverName}" and cleaned up project files`,
+      });
+    } else {
+      // Server config was removed but project cleanup failed
+      res.status(200).json({
+        success: true,
+        message: `Server "${serverName}" removed, but project cleanup failed: ${uninstallResult.message}`,
+      });
+    }
+  } catch (error) {
+    console.error('GitHub uninstallation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during uninstallation',
     });
   }
 };

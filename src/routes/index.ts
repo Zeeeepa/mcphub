@@ -11,6 +11,8 @@ import {
   toggleTool,
   updateToolDescription,
   updateSystemConfig,
+  installGitHubServer,
+  uninstallGitHubServer,
 } from '../controllers/serverController.js';
 import {
   getGroups,
@@ -59,6 +61,7 @@ import { getAllLogs, clearLogs, streamLogs } from '../controllers/logController.
 import { getRuntimeConfig, getPublicConfig } from '../controllers/configController.js';
 import { callTool } from '../controllers/toolController.js';
 import { uploadDxtFile, uploadMiddleware } from '../controllers/dxtController.js';
+import { getVariables, addVariable, modifyVariable, removeVariable } from '../controllers/variableController.js';
 import { auth } from '../middlewares/auth.js';
 
 const router = express.Router();
@@ -74,6 +77,10 @@ export const initRoutes = (app: express.Application): void => {
   router.post('/servers/:serverName/tools/:toolName/toggle', toggleTool);
   router.put('/servers/:serverName/tools/:toolName/description', updateToolDescription);
   router.put('/system-config', updateSystemConfig);
+
+  // GitHub Installation routes
+  router.post('/servers/github/install', installGitHubServer);
+  router.delete('/servers/github/:serverName/uninstall', uninstallGitHubServer);
 
   // Group management routes
   router.get('/groups', getGroups);
@@ -104,6 +111,12 @@ export const initRoutes = (app: express.Application): void => {
 
   // DXT upload routes
   router.post('/dxt/upload', uploadMiddleware, uploadDxtFile);
+
+  // Variables management routes
+  router.get('/variables', getVariables);
+  router.post('/variables', addVariable);
+  router.put('/variables/:key', modifyVariable);
+  router.delete('/variables/:key', removeVariable);
 
   // Market routes
   router.get('/market/servers', getAllMarketServers);
