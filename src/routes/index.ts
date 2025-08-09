@@ -64,6 +64,8 @@ import {
   getVariableByKey,
   createOrUpdateVariable,
   removeVariable,
+  exportVariablesController,
+  importVariablesController,
 } from '../controllers/variablesController.js';
 import {
   installFromGitHubRepo,
@@ -122,6 +124,8 @@ export const initRoutes = (app: express.Application): void => {
   router.post('/variables', createOrUpdateVariable);
   router.put('/variables/:key', createOrUpdateVariable);
   router.delete('/variables/:key', removeVariable);
+  router.get('/variables/export', exportVariablesController);
+  router.post('/variables/import', importVariablesController);
 
   // Installation routes
   router.post('/install/github', installFromGitHubRepo);

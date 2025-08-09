@@ -6,6 +6,7 @@ interface SavedVariable {
   key: string;
   value: string;
   description?: string;
+  encrypted?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,6 +22,7 @@ const VariablesPage: React.FC = () => {
     key: '',
     value: '',
     description: '',
+    encrypt: false,
   });
 
   useEffect(() => {
@@ -45,7 +47,7 @@ const VariablesPage: React.FC = () => {
   };
 
   const handleAddVariable = () => {
-    setFormData({ key: '', value: '', description: '' });
+    setFormData({ key: '', value: '', description: '', encrypt: false });
     setEditingVariable(null);
     setShowAddDialog(true);
   };
@@ -53,8 +55,9 @@ const VariablesPage: React.FC = () => {
   const handleEditVariable = (variable: SavedVariable) => {
     setFormData({
       key: variable.key,
-      value: variable.value,
+      value: variable.encrypted ? '' : variable.value, // Don't show encrypted values in edit form
       description: variable.description || '',
+      encrypt: variable.encrypted || false,
     });
     setEditingVariable(variable);
     setShowAddDialog(true);
@@ -77,13 +80,14 @@ const VariablesPage: React.FC = () => {
         key: formData.key.trim(),
         value: formData.value.trim(),
         description: formData.description.trim() || undefined,
+        encrypt: formData.encrypt,
       };
 
       const response = await apiPost('/variables', payload);
       
       if (response.success) {
         setShowAddDialog(false);
-        setFormData({ key: '', value: '', description: '' });
+        setFormData({ key: '', value: '', description: '', encrypt: false });
         setEditingVariable(null);
         setError(null);
         await loadVariables();
@@ -117,9 +121,69 @@ const VariablesPage: React.FC = () => {
 
   const handleCloseDialog = () => {
     setShowAddDialog(false);
-    setFormData({ key: '', value: '', description: '' });
+    setFormData({ key: '', value: '', description: '', encrypt: false });
     setEditingVariable(null);
     setError(null);
+  };
+
+  const handleExportVariables = async () => {
+    try {
+      const response = await apiGet('/variables/export');
+      if (response.success) {
+        const dataStr = JSON.stringify(response.data, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `mcphub-variables-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        setError(response.message || 'Failed to export variables');
+      }
+    } catch (err) {
+      setError('Failed to export variables');
+      console.error('Error exporting variables:', err);
+    }
+  };
+
+  const handleImportVariables = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const importData = JSON.parse(text);
+      
+      if (!importData.variables || !Array.isArray(importData.variables)) {
+        setError('Invalid file format. Expected variables array.');
+        return;
+      }
+
+      const overwrite = window.confirm('Do you want to overwrite existing variables with the same keys?');
+      
+      const response = await apiPost('/variables/import', {
+        variables: importData.variables,
+        overwrite
+      });
+
+      if (response.success) {
+        await loadVariables();
+        setError(null);
+        // Show success message
+        alert(response.message || 'Variables imported successfully');
+      } else {
+        setError(response.message || 'Failed to import variables');
+      }
+    } catch (err) {
+      setError('Failed to import variables. Please check the file format.');
+      console.error('Error importing variables:', err);
+    }
+    
+    // Reset file input
+    event.target.value = '';
   };
 
   if (loading) {
@@ -134,15 +198,38 @@ const VariablesPage: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Saved Variables</h1>
-        <button
-          onClick={handleAddVariable}
-          className="px-4 py-2 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 flex items-center btn-primary transition-all duration-200"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-          </svg>
-          Add Variable
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportVariables}
+            className="px-4 py-2 bg-green-100 text-green-800 rounded hover:bg-green-200 flex items-center transition-all duration-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+            Export
+          </button>
+          <label className="px-4 py-2 bg-purple-100 text-purple-800 rounded hover:bg-purple-200 flex items-center cursor-pointer transition-all duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 11-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+            Import
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleImportVariables}
+              className="hidden"
+            />
+          </label>
+          <button
+            onClick={handleAddVariable}
+            className="px-4 py-2 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 flex items-center btn-primary transition-all duration-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Add Variable
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -184,10 +271,21 @@ const VariablesPage: React.FC = () => {
                       <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                         Variable
                       </span>
+                      {variable.encrypted && (
+                        <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                          </svg>
+                          Encrypted
+                        </span>
+                      )}
                     </div>
                     <div className="mt-1">
                       <p className="text-sm text-gray-600 font-mono bg-gray-50 px-2 py-1 rounded">
-                        {variable.value.length > 50 ? `${variable.value.substring(0, 50)}...` : variable.value}
+                        {variable.encrypted 
+                          ? '••••••••••••••••••••••••••••••••••••••••••••••••••' 
+                          : (variable.value.length > 50 ? `${variable.value.substring(0, 50)}...` : variable.value)
+                        }
                       </p>
                     </div>
                     {variable.description && (
@@ -276,6 +374,19 @@ const VariablesPage: React.FC = () => {
                     placeholder="Optional description"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="encrypt"
+                    checked={formData.encrypt}
+                    onChange={(e) => setFormData({ ...formData, encrypt: e.target.checked })}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="encrypt" className="ml-2 block text-sm text-gray-900">
+                    Encrypt this variable (recommended for API keys, tokens, passwords)
+                  </label>
                 </div>
               </div>
 
