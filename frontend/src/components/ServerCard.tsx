@@ -13,9 +13,10 @@ interface ServerCardProps {
   onEdit: (server: Server) => void
   onToggle?: (server: Server, enabled: boolean) => Promise<boolean>
   onRefresh?: () => void
+  onUninstall?: (serverName: string) => void
 }
 
-const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh }: ServerCardProps) => {
+const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh, onUninstall }: ServerCardProps) => {
   const { t } = useTranslation()
   const { showToast } = useToast()
   const [isExpanded, setIsExpanded] = useState(false)
@@ -128,7 +129,7 @@ const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh }: ServerCar
 
   return (
     <>
-      <div className={`bg-white shadow rounded-lg p-6 mb-6 page-card transition-all duration-200 ${server.enabled === false ? 'opacity-60' : ''}`}>
+      <div className={`${server.config?.isInstalled ? 'bg-yellow-50 border-yellow-200' : 'bg-white'} shadow rounded-lg p-6 mb-6 page-card transition-all duration-200 ${server.enabled === false ? 'opacity-60' : ''} ${server.config?.isInstalled ? 'border' : ''}`}>
         <div
           className="flex justify-between items-center cursor-pointer"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -136,6 +137,14 @@ const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh }: ServerCar
           <div className="flex items-center space-x-3">
             <h2 className={`text-xl font-semibold ${server.enabled === false ? 'text-gray-600' : 'text-gray-900'}`}>{server.name}</h2>
             <StatusBadge status={server.status} />
+            {server.config?.isInstalled && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+                {t('server.installed', 'Installed')}
+              </span>
+            )}
 
             {/* Tool count display */}
             <div className="flex items-center px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-sm btn-primary">
@@ -225,10 +234,14 @@ const ServerCard = ({ server, onRemove, onEdit, onToggle, onRefresh }: ServerCar
               </button>
             </div>
             <button
-              onClick={handleRemove}
-              className="px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 text-sm btn-danger"
+              onClick={server.config?.isInstalled ? () => onUninstall?.(server.name) : handleRemove}
+              className={`px-3 py-1 rounded text-sm ${
+                server.config?.isInstalled 
+                  ? 'bg-orange-100 text-orange-800 hover:bg-orange-200 btn-warning' 
+                  : 'bg-red-100 text-red-800 hover:bg-red-200 btn-danger'
+              }`}
             >
-              {t('server.delete')}
+              {server.config?.isInstalled ? t('server.uninstall', 'Uninstall') : t('server.delete')}
             </button>
             <button className="text-gray-400 hover:text-gray-600 btn-secondary">
               {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
