@@ -14,6 +14,7 @@ import SettingsPage from './pages/SettingsPage';
 import MarketPage from './pages/MarketPage';
 import CloudPage from './pages/CloudPage';
 import LogsPage from './pages/LogsPage';
+import VariablesPage from './pages/VariablesPage';
 import { getBasePath } from './utils/runtime';
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
                   <Route path="/cloud" element={<CloudPage />} />
                   <Route path="/cloud/:serverName" element={<CloudPage />} />
                   <Route path="/logs" element={<LogsPage />} />
+                  <Route path="/variables" element={<VariablesPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                 </Route>
               </Route>

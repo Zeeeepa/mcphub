@@ -199,7 +199,8 @@
     "users": "用户",
     "market": "本地市场",
     "cloud": "云端市场",
-    "logs": "日志"
+    "logs": "日志",
+    "variables": "变量"
   },
   "pages": {
     "dashboard": {

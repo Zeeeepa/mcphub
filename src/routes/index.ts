@@ -59,6 +59,12 @@ import { getAllLogs, clearLogs, streamLogs } from '../controllers/logController.
 import { getRuntimeConfig, getPublicConfig } from '../controllers/configController.js';
 import { callTool } from '../controllers/toolController.js';
 import { uploadDxtFile, uploadMiddleware } from '../controllers/dxtController.js';
+import {
+  getVariables,
+  getVariableByKey,
+  createOrUpdateVariable,
+  removeVariable,
+} from '../controllers/variablesController.js';
 import { auth } from '../middlewares/auth.js';
 
 const router = express.Router();
@@ -104,6 +110,13 @@ export const initRoutes = (app: express.Application): void => {
 
   // DXT upload routes
   router.post('/dxt/upload', uploadMiddleware, uploadDxtFile);
+
+  // Variables management routes
+  router.get('/variables', getVariables);
+  router.get('/variables/:key', getVariableByKey);
+  router.post('/variables', createOrUpdateVariable);
+  router.put('/variables/:key', createOrUpdateVariable);
+  router.delete('/variables/:key', removeVariable);
 
   // Market routes
   router.get('/market/servers', getAllMarketServers);
