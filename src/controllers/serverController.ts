@@ -12,6 +12,7 @@ import {
 import { loadSettings, saveSettings } from '../config/index.js';
 import { syncAllServerToolsEmbeddings } from '../services/vectorSearchService.js';
 import { createSafeJSON } from '../utils/serialization.js';
+import { substituteVariables } from '../services/variablesService.js';
 
 export const getAllServers = (_: Request, res: Response): void => {
   try {
@@ -135,7 +136,10 @@ export const createServer = async (req: Request, res: Response): Promise<void> =
       config.owner = currentUser?.username || 'admin';
     }
 
-    const result = await addServer(name, config);
+    // Substitute variables in the configuration
+    const configWithVariables = substituteVariables(config);
+
+    const result = await addServer(name, configWithVariables);
     if (result.success) {
       notifyToolChanged();
       res.json({
@@ -278,7 +282,10 @@ export const updateServer = async (req: Request, res: Response): Promise<void> =
       config.owner = currentUser?.username || 'admin';
     }
 
-    const result = await addOrUpdateServer(name, config, true); // Allow override for updates
+    // Substitute variables in the configuration
+    const configWithVariables = substituteVariables(config);
+
+    const result = await addOrUpdateServer(name, configWithVariables, true); // Allow override for updates
     if (result.success) {
       notifyToolChanged();
       res.json({

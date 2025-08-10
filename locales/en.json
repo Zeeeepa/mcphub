@@ -198,7 +198,8 @@
     "changePassword": "Change Password",
     "market": "Local Market",
     "cloud": "Cloud Market",
-    "logs": "Logs"
+    "logs": "Logs",
+    "variables": "Variables"
   },
   "pages": {
     "dashboard": {

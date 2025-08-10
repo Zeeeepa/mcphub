@@ -7,6 +7,7 @@ import AddServerForm from '@/components/AddServerForm';
 import EditServerForm from '@/components/EditServerForm';
 import { useServerData } from '@/hooks/useServerData';
 import DxtUploadForm from '@/components/DxtUploadForm';
+import GitHubInstallForm from '@/components/GitHubInstallForm';
 
 const ServersPage: React.FC = () => {
   const { t } = useTranslation();
@@ -25,6 +26,8 @@ const ServersPage: React.FC = () => {
   const [editingServer, setEditingServer] = useState<Server | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDxtUpload, setShowDxtUpload] = useState(false);
+  const [showGitHubInstall, setShowGitHubInstall] = useState(false);
+  const [isInstalling, setIsInstalling] = useState(false);
 
   const handleEditClick = async (server: Server) => {
     const fullServerData = await handleServerEdit(server);
@@ -55,6 +58,35 @@ const ServersPage: React.FC = () => {
     triggerRefresh();
   };
 
+  const handleGitHubInstall = async (githubUrl: string, serverName?: string) => {
+    setIsInstalling(true);
+    try {
+      const response = await fetch('/api/install/github', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ githubUrl, serverName }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setShowGitHubInstall(false);
+        triggerRefresh();
+        // Show success message
+        setError(null);
+      } else {
+        setError(data.message || 'Failed to install from GitHub');
+      }
+    } catch (error) {
+      console.error('GitHub installation error:', error);
+      setError('Failed to install from GitHub. Please try again.');
+    } finally {
+      setIsInstalling(false);
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
@@ -79,6 +111,15 @@ const ServersPage: React.FC = () => {
             {t('nav.market')}
           </button>
           <AddServerForm onAdd={handleServerAdd} />
+          <button
+            onClick={() => setShowGitHubInstall(true)}
+            className="px-4 py-2 bg-purple-100 text-purple-800 rounded hover:bg-purple-200 flex items-center btn-primary transition-all duration-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clipRule="evenodd" />
+            </svg>
+            Install from GitHub
+          </button>
           <button
             onClick={() => setShowDxtUpload(true)}
             className="px-4 py-2 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 flex items-center btn-primary transition-all duration-200"
@@ -168,6 +209,14 @@ const ServersPage: React.FC = () => {
         <DxtUploadForm
           onSuccess={handleDxtUploadSuccess}
           onCancel={() => setShowDxtUpload(false)}
+        />
+      )}
+
+      {showGitHubInstall && (
+        <GitHubInstallForm
+          onInstall={handleGitHubInstall}
+          onClose={() => setShowGitHubInstall(false)}
+          isInstalling={isInstalling}
         />
       )}
     </div>
