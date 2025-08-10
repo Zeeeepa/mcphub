@@ -35,9 +35,9 @@ const getEncryptionKey = (): string => {
 
 // Encrypt a value
 const encryptValue = (value: string): string => {
-  const key = getEncryptionKey();
+  const key = Buffer.from(getEncryptionKey(), 'hex');
   const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipher('aes-256-cbc', key);
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
   
   let encrypted = cipher.update(value, 'utf8', 'hex');
   encrypted += cipher.final('hex');
@@ -48,14 +48,15 @@ const encryptValue = (value: string): string => {
 // Decrypt a value
 const decryptValue = (encryptedValue: string): string => {
   try {
-    const key = getEncryptionKey();
+    const key = Buffer.from(getEncryptionKey(), 'hex');
     const [ivHex, encrypted] = encryptedValue.split(':');
     
     if (!ivHex || !encrypted) {
       throw new Error('Invalid encrypted format');
     }
     
-    const decipher = crypto.createDecipher('aes-256-cbc', key);
+    const iv = Buffer.from(ivHex, 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     

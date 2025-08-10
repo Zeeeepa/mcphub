@@ -1,16 +1,13 @@
 import { Request, Response } from 'express';
 import { ApiResponse } from '../types/index.js';
 import {
-  getAllVariables,
   getAllVariablesForDisplay,
-  getVariable,
   getVariableForDisplay,
   setVariable,
   deleteVariable,
   isValidVariableKey,
   exportVariables,
   importVariables,
-  SavedVariable,
 } from '../services/variablesService.js';
 
 export const getVariables = (_: Request, res: Response): void => {

@@ -1,11 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import { spawn } from 'child_process';
 import { promisify } from 'util';
-import { loadSettings, saveSettings } from '../config/index.js';
+import { exec as execCallback } from 'child_process';
 import { addServer } from './mcpService.js';
 
-const exec = promisify(require('child_process').exec);
+const exec = promisify(execCallback);
 
 export interface InstallationResult {
   success: boolean;
@@ -26,9 +25,9 @@ export const parseGitHubUrl = (url: string): GitHubRepoInfo | null => {
   try {
     // Support various GitHub URL formats
     const patterns = [
-      /^https:\/\/github\.com\/([^\/]+)\/([^\/]+?)(?:\.git)?(?:\/.*)?$/,
-      /^git@github\.com:([^\/]+)\/([^\/]+?)(?:\.git)?$/,
-      /^github\.com\/([^\/]+)\/([^\/]+?)(?:\.git)?(?:\/.*)?$/,
+      /^https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?(?:\/.*)?$/,
+      /^git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?$/,
+      /^github\.com\/([^/]+)\/([^/]+?)(?:\/.*)?$/,
     ];
 
     for (const pattern of patterns) {
@@ -98,12 +97,16 @@ export const cloneRepository = async (repoInfo: GitHubRepoInfo): Promise<boolean
       fs.mkdirSync(tempDir, { recursive: true });
     }
 
-    // Clone the repository
-    await exec(`git clone ${repoInfo.url} ${repoInfo.clonePath}`);
+    // Clone the repository with timeout and depth limit
+    await exec(`git clone --depth 1 ${repoInfo.url} ${repoInfo.clonePath}`, { 
+      timeout: 30000 // 30 second timeout
+    });
     
     return fs.existsSync(repoInfo.clonePath);
   } catch (error) {
     console.error('Error cloning repository:', error);
+    // Cleanup on failure
+    cleanupTempFiles(repoInfo.clonePath);
     return false;
   }
 };
@@ -131,18 +134,26 @@ export const buildNodeProject = async (projectPath: string): Promise<boolean> =>
       return false;
     }
 
-    // Install dependencies
-    await exec('npm install', { cwd: projectPath });
+    // Install dependencies with timeout
+    await exec('npm install', { 
+      cwd: projectPath,
+      timeout: 60000 // 60 second timeout
+    });
     
     // Check if there's a build script
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
     if (packageJson.scripts && packageJson.scripts.build) {
-      await exec('npm run build', { cwd: projectPath });
+      await exec('npm run build', { 
+        cwd: projectPath,
+        timeout: 120000 // 2 minute timeout for build
+      });
     }
     
     return true;
   } catch (error) {
     console.error('Error building Node.js project:', error);
+    // Cleanup on failure
+    cleanupTempFiles(projectPath);
     return false;
   }
 };
