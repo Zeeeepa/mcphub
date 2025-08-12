@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "MCPhub": {
+      "type": "sse",
+      "url": "https://mcp.pixeliumperfecto.workers.dev/sse",
+      "keepAliveInterval": 60000,
+      "owner": "admin",
+      "env": "YOUR_API_KEY_HERE"
+    }
+  }
+}
+
