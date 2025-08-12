@@ -1,230 +1,402 @@
-# MCPHub: The Unified Hub for Model Context Protocol (MCP) Servers
+# MCPhub WSL2 + Cloudflare + Database Implementation
 
-English | [中文版](README.zh.md)
+Complete implementation of MCPhub with PostgreSQL database backend, enhanced API key authentication, and Cloudflare Tunnel integration for WSL2 deployment.
 
-MCPHub makes it easy to manage and scale multiple MCP (Model Context Protocol) servers by organizing them into flexible Streamable HTTP (SSE) endpoints—supporting access to all servers, individual servers, or logical server groups.
+## 🎯 What This Provides
 
-![Dashboard Preview](assets/dashboard.png)
+Transform your MCPhub deployment from file-based configuration to a production-ready system with:
 
-## 🚀 Features
+- **🗄️ PostgreSQL Database Backend** - Replace `mcp_settings.json` with robust database storage
+- **🔐 Enhanced API Key Authentication** - Database-backed API keys with per-user permissions
+- **🌐 Cloudflare Tunnel Integration** - Secure public access via your custom domain
+- **🚀 WSL2 Optimized Deployment** - Complete automation for Windows WSL2 environment
+- **📊 Usage Analytics & Logging** - Track connections, tool usage, and performance metrics
+- **🛠️ Management Tools** - Scripts and utilities for easy operation
 
-- **Broadened MCP Server Support**: Seamlessly integrate any MCP server with minimal configuration.
-- **Centralized Dashboard**: Monitor real-time status and performance metrics from one sleek web UI.
-- **Flexible Protocol Handling**: Full compatibility with both stdio and SSE MCP protocols.
-- **Hot-Swappable Configuration**: Add, remove, or update MCP servers on the fly — no downtime required.
-- **Group-Based Access Control**: Organize servers into customizable groups for streamlined permissions management.
-- **Secure Authentication**: Built-in user management with role-based access powered by JWT and bcrypt.
-- **Docker-Ready**: Deploy instantly with our containerized setup.
+## 🚀 Quick Start
 
-## 🔧 Quick Start
+### One-Command Deployment
 
-### Configuration
+```bash
+# Clone and deploy MCPhub with all enhancements
+git clone https://github.com/your-repo/mcphub-enhanced.git
+cd mcphub-enhanced
 
-Create a `mcp_settings.json` file to customize your server settings:
+# Deploy with your domain
+DOMAIN="pixeliumperfecto.co.uk" ./deploy-wsl2-mcphub.sh
+```
+
+### Client Configuration
+
+After deployment, use this configuration in your MCP client:
 
 ```json
 {
   "mcpServers": {
-    "amap": {
-      "command": "npx",
-      "args": ["-y", "@amap/amap-maps-mcp-server"],
-      "env": {
-        "AMAP_MAPS_API_KEY": "your-api-key"
-      }
-    },
-    "playwright": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest", "--headless"]
-    },
-    "fetch": {
-      "command": "uvx",
-      "args": ["mcp-server-fetch"]
-    },
-    "slack": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-slack"],
-      "env": {
-        "SLACK_BOT_TOKEN": "your-bot-token",
-        "SLACK_TEAM_ID": "your-team-id"
-      }
+    "MCPhub": {
+      "type": "sse",
+      "url": "https://pixeliumperfecto.co.uk/sse",
+      "keepAliveInterval": 60000,
+      "owner": "admin",
+      "env": "YOUR_API_KEY_HERE"
     }
   }
 }
 ```
 
-### Docker Deployment
+## 📋 Features
 
-**Recommended**: Mount your custom config:
+### Database-Backed Configuration
+- **PostgreSQL Storage**: All MCP server configurations stored in database
+- **User Management**: Multi-user support with role-based permissions
+- **Configuration History**: Track changes and rollback capabilities
+- **Performance**: Cached configuration loading with 30-second TTL
+
+### Enhanced Authentication
+- **API Key System**: Database-backed API keys with granular permissions
+- **Multiple Auth Methods**: Bearer tokens, JWT, and legacy support
+- **Usage Tracking**: Monitor API key usage and enforce rate limits
+- **Security**: Bcrypt password hashing and secure key generation
+
+### Cloudflare Integration
+- **Tunnel Setup**: Automated Cloudflare Tunnel configuration
+- **SSL/TLS**: End-to-end encryption with Cloudflare certificates
+- **Domain Management**: Support for custom domains and subdomains
+- **WSL2 Optimized**: No port forwarding or firewall configuration needed
+
+### Analytics & Monitoring
+- **Connection Logging**: Track all MCP server connections
+- **Tool Usage Analytics**: Monitor tool execution and performance
+- **Health Monitoring**: Comprehensive health checks and status reporting
+- **Performance Metrics**: Response times, error rates, and usage patterns
+
+## 🏗️ Architecture
+
+### Database Schema
+
+```sql
+-- Core tables for MCPhub configuration
+users              -- User accounts and authentication
+api_keys           -- Database-backed API key management
+mcp_servers        -- MCP server configurations
+groups             -- Server groupings and organization
+group_members      -- Many-to-many server-group relationships
+system_config      -- Global system configuration
+connection_logs    -- Connection tracking and analytics
+tool_usage_logs    -- Tool execution monitoring
+```
+
+### Service Architecture
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   MCP Client    │────│  Cloudflare      │────│   WSL2 Host     │
+│                 │    │  Tunnel          │    │                 │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                                         │
+                                                ┌─────────────────┐
+                                                │     MCPhub      │
+                                                │  (Node.js/PM2)  │
+                                                └─────────────────┘
+                                                         │
+                                                ┌─────────────────┐
+                                                │   PostgreSQL    │
+                                                │   Database      │
+                                                └─────────────────┘
+```
+
+## 📁 Project Structure
+
+```
+mcphub-enhanced/
+├── database/
+│   ├── migrations/
+│   │   └── 001_initial_schema.sql      # Database schema
+│   └── seeds/
+│       └── default_data.sql            # Initial data
+├── src/
+│   ├── services/
+│   │   └── databaseService.ts          # Database abstraction layer
+│   ├── config/
+│   │   └── database.ts                 # Database configuration
+│   ├── middlewares/
+│   │   └── enhancedAuth.ts             # Enhanced authentication
+│   └── utils/
+│       └── configGenerator.ts          # Client config generation
+├── scripts/
+│   ├── setup-cloudflare-tunnel.sh     # Cloudflare Tunnel setup
+│   └── generate-client-config.js      # Client config generator
+├── docs/
+│   ├── WSL2_DEPLOYMENT.md              # Deployment guide
+│   ├── CLOUDFLARE_SETUP.md             # Cloudflare configuration
+│   └── API_REFERENCE.md                # Complete API documentation
+├── deploy-wsl2-mcphub.sh               # Main deployment script
+└── README.md                           # This file
+```
+
+## 🛠️ Installation & Setup
+
+### Prerequisites
+
+- **Windows 10/11** with WSL2 enabled
+- **Ubuntu 20.04+** in WSL2
+- **Cloudflare Account** with domain configured (optional)
+- **4GB RAM** and **10GB disk space**
+
+### Automated Deployment
 
 ```bash
-docker run -p 3000:3000 -v ./mcp_settings.json:/app/mcp_settings.json -v ./data:/app/data samanhappy/mcphub
+# 1. Clone the repository
+git clone https://github.com/your-repo/mcphub-enhanced.git
+cd mcphub-enhanced
+
+# 2. Make deployment script executable
+chmod +x deploy-wsl2-mcphub.sh
+chmod +x scripts/setup-cloudflare-tunnel.sh
+
+# 3. Run deployment
+DOMAIN="your-domain.com" ./deploy-wsl2-mcphub.sh
 ```
 
-or run with default settings:
+### Manual Setup
+
+For step-by-step manual installation, see [WSL2_DEPLOYMENT.md](docs/WSL2_DEPLOYMENT.md).
+
+## 🔧 Configuration
+
+### Environment Variables
+
+The deployment creates a `.env` file with:
 
 ```bash
-docker run -p 3000:3000 samanhappy/mcphub
+# Database Configuration
+DB_NAME=mcphub
+DB_USER=mcphub_user
+DB_PASS=auto_generated_password
+DB_HOST=localhost
+DB_PORT=5432
+
+# Application Configuration
+NODE_ENV=production
+PORT=3000
+JWT_SECRET=auto_generated_secret
+
+# Cloudflare Configuration
+DOMAIN=your-domain.com
+TUNNEL_NAME=mcphub-wsl2
 ```
 
-### Access the Dashboard
+### Database Configuration
 
-Open `http://localhost:3000` and log in with your credentials.
+Replace file-based `mcp_settings.json` with database storage:
 
-> **Note**: Default credentials are `admin` / `admin123`.
+```typescript
+// Load settings from database
+const settings = await loadSettings(user);
 
-**Dashboard Overview**:
+// Save settings to database
+await saveSettings(updatedSettings, user);
 
-- Live status of all MCP servers
-- Enable/disable or reconfigure servers
-- Group management for organizing servers
-- User administration for access control
-
-### Streamable HTTP Endpoint
-
-> As of now, support for streaming HTTP endpoints varies across different AI clients. If you encounter issues, you can use the SSE endpoint or wait for future updates.
-
-Connect AI clients (e.g., Claude Desktop, Cursor, DeepChat, etc.) via:
-
-```
-http://localhost:3000/mcp
+// Create API key
+const apiKey = await createApiKey('My Key', username, permissions);
 ```
 
-This endpoint provides a unified streamable HTTP interface for all your MCP servers. It allows you to:
-
-- Send requests to any configured MCP server
-- Receive responses in real-time
-- Easily integrate with various AI clients and tools
-- Use the same endpoint for all servers, simplifying your integration process
-
-**Smart Routing (Experimental)**:
-
-Smart Routing is MCPHub's intelligent tool discovery system that uses vector semantic search to automatically find the most relevant tools for any given task.
-
-```
-http://localhost:3000/mcp/$smart
-```
-
-**How it Works:**
-
-1. **Tool Indexing**: All MCP tools are automatically converted to vector embeddings and stored in PostgreSQL with pgvector
-2. **Semantic Search**: User queries are converted to vectors and matched against tool embeddings using cosine similarity
-3. **Intelligent Filtering**: Dynamic thresholds ensure relevant results without noise
-4. **Precise Execution**: Found tools can be directly executed with proper parameter validation
-
-**Setup Requirements:**
-
-![Smart Routing](assets/smart-routing.png)
-
-To enable Smart Routing, you need:
-
-- PostgreSQL with pgvector extension
-- OpenAI API key (or compatible embedding service)
-- Enable Smart Routing in MCPHub settings
-
-**Group-Specific Endpoints (Recommended)**:
-
-![Group Management](assets/group.png)
-
-For targeted access to specific server groups, use the group-based HTTP endpoint:
-
-```
-http://localhost:3000/mcp/{group}
-```
-
-Where `{group}` is the ID or name of the group you created in the dashboard. This allows you to:
-
-- Connect to a specific subset of MCP servers organized by use case
-- Isolate different AI tools to access only relevant servers
-- Implement more granular access control for different environments or teams
-
-**Server-Specific Endpoints**:
-For direct access to individual servers, use the server-specific HTTP endpoint:
-
-```
-http://localhost:3000/mcp/{server}
-```
-
-Where `{server}` is the name of the server you want to connect to. This allows you to access a specific MCP server directly.
-
-> **Note**: If the server name and group name are the same, the group name will take precedence.
-
-### SSE Endpoint (Deprecated in Future)
-
-Connect AI clients (e.g., Claude Desktop, Cursor, DeepChat, etc.) via:
-
-```
-http://localhost:3000/sse
-```
-
-For smart routing, use:
-
-```
-http://localhost:3000/sse/$smart
-```
-
-For targeted access to specific server groups, use the group-based SSE endpoint:
-
-```
-http://localhost:3000/sse/{group}
-```
-
-For direct access to individual servers, use the server-specific SSE endpoint:
-
-```
-http://localhost:3000/sse/{server}
-```
-
-## 🧑‍💻 Local Development
+### API Key Management
 
 ```bash
-git clone https://github.com/samanhappy/mcphub.git
-cd mcphub
-pnpm install
-pnpm dev
+# Generate new API key
+~/generate-api-key.sh
+
+# List API keys (via database)
+psql -U mcphub_user -d mcphub -c "SELECT key_name, is_active, created_at FROM api_keys;"
 ```
 
-This starts both frontend and backend in development mode with hot-reloading.
+## 🚀 Usage
 
-> For windows users, you may need to start the backend server and frontend separately: `pnpm backend:dev`, `pnpm frontend:dev`.
+### Service Management
 
-## 🛠️ Common Issues
+```bash
+# Start all services
+~/start-mcphub.sh
 
-### Using Nginx as a Reverse Proxy
+# Stop all services
+~/stop-mcphub.sh
 
-If you are using Nginx to reverse proxy MCPHub, please make sure to add the following configuration in your Nginx setup:
-
-```nginx
-proxy_buffering off
+# Check service status
+~/mcphub-status.sh
 ```
 
-## 🔍 Tech Stack
+### Client Configuration Generation
 
-- **Backend**: Node.js, Express, TypeScript
-- **Frontend**: React, Vite, Tailwind CSS
-- **Auth**: JWT & bcrypt
-- **Protocol**: Model Context Protocol SDK
+```bash
+# Generate configuration for your deployment
+node scripts/generate-client-config.js \
+  --deployment cloudflare \
+  --domain pixeliumperfecto.co.uk \
+  --generate-api-key \
+  --output mcphub-config.json
+```
 
-## 👥 Contributing
+### API Usage
 
-Contributions of any kind are welcome!
+```bash
+# Health check
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://pixeliumperfecto.co.uk/api/health
 
-- New features & optimizations
-- Documentation improvements
-- Bug reports & fixes
-- Translations & suggestions
+# List servers
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://pixeliumperfecto.co.uk/api/servers
 
-Welcome to join our [Discord community](https://discord.gg/qMKNsn5Q) for discussions and support.
+# Execute tool
+curl -X POST \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"arguments":{"url":"https://example.com"}}' \
+  https://pixeliumperfecto.co.uk/tools/call/fetch/fetch_url
+```
 
-## ❤️ Sponsor
+## 📊 Monitoring & Analytics
 
-If you like this project, maybe you can consider:
+### Database Queries
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/samanhappy)
+```sql
+-- Connection statistics
+SELECT 
+  s.name as server_name,
+  COUNT(*) as total_connections,
+  AVG(duration_seconds) as avg_duration
+FROM connection_logs cl
+JOIN mcp_servers s ON cl.server_id = s.id
+WHERE cl.connected_at > NOW() - INTERVAL '24 hours'
+GROUP BY s.name;
 
-## 🌟 Star History
+-- Tool usage statistics
+SELECT 
+  tool_name,
+  COUNT(*) as total_calls,
+  AVG(execution_time_ms) as avg_execution_time,
+  COUNT(CASE WHEN status = 'success' THEN 1 END) as successful_calls
+FROM tool_usage_logs
+WHERE created_at > NOW() - INTERVAL '24 hours'
+GROUP BY tool_name
+ORDER BY total_calls DESC;
+```
 
-[![Star History Chart](https://api.star-history.com/svg?repos=samanhappy/mcphub&type=Date)](https://www.star-history.com/#samanhappy/mcphub&Date)
+### Health Monitoring
+
+```bash
+# Check all services
+~/mcphub-status.sh
+
+# View logs
+pm2 logs mcphub
+tail -f /tmp/tunnel.log
+tail -f /tmp/mcphub-wsl2-setup.log
+```
+
+## 🔐 Security
+
+### Authentication Methods
+
+1. **API Keys** (Recommended)
+   - Database-backed with permissions
+   - Usage tracking and rate limiting
+   - Secure generation and storage
+
+2. **JWT Tokens**
+   - Web dashboard authentication
+   - Session-based access control
+
+3. **Bearer Tokens**
+   - Legacy system-wide tokens
+   - Backward compatibility
+
+### Security Features
+
+- **Encrypted Storage**: Bcrypt password hashing
+- **Secure Tunnels**: Cloudflare Tunnel with SSL/TLS
+- **Access Control**: Role-based permissions
+- **Audit Logging**: Complete connection and usage logs
+- **Rate Limiting**: Per-key request limits
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Database Connection Failed
+```bash
+# Check PostgreSQL status
+sudo service postgresql status
+
+# Test connection
+psql -U mcphub_user -d mcphub -c "SELECT 1;"
+
+# Check credentials
+cat ~/mcphub/.env
+```
+
+#### Cloudflare Tunnel Issues
+```bash
+# Check tunnel status
+~/tunnel-status.sh
+
+# View tunnel logs
+tail -f /tmp/tunnel.log
+
+# Restart tunnel
+~/stop-tunnel.sh && ~/start-tunnel.sh
+```
+
+#### API Authentication Fails
+```bash
+# Test API key
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  http://localhost:3000/health
+
+# Check API keys in database
+psql -U mcphub_user -d mcphub -c "SELECT * FROM api_keys WHERE is_active = true;"
+```
+
+### Log Locations
+
+- **Setup Logs**: `/tmp/mcphub-wsl2-setup.log`
+- **MCPhub Logs**: `/tmp/mcphub-combined.log`
+- **Tunnel Logs**: `/tmp/tunnel.log`
+- **PM2 Logs**: `pm2 logs mcphub`
+
+## 📚 Documentation
+
+- **[WSL2 Deployment Guide](docs/WSL2_DEPLOYMENT.md)** - Complete setup instructions
+- **[Cloudflare Setup Guide](docs/CLOUDFLARE_SETUP.md)** - Tunnel configuration
+- **[API Reference](docs/API_REFERENCE.md)** - Complete API documentation
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests and documentation
+5. Submit a pull request
 
 ## 📄 License
 
-Licensed under the [Apache 2.0 License](LICENSE).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- **GitHub Issues**: [Create an issue](https://github.com/your-repo/mcphub-enhanced/issues)
+- **Documentation**: Check the `docs/` directory
+- **Community**: Join the [Discord server](https://discord.gg/mcphub)
+
+## 🙏 Acknowledgments
+
+- **MCPhub Team** - Original MCPhub implementation
+- **Cloudflare** - Tunnel technology and infrastructure
+- **PostgreSQL** - Robust database backend
+- **Community Contributors** - Bug reports and feature requests
+
+---
+
+**Made with ❤️ for the MCP community**
+

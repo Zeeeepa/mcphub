@@ -25,4 +25,4 @@ yarn-error.log*
 *.log
 coverage/
 
-data/
+data/cloudflare-worker/node_modules/
