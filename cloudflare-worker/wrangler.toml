@@ -1,0 +1,36 @@
+# Base configuration for all workers
+account_id = "2b2a1d3effa7f7fe4fe2a8c4e48681e3"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Environment variables for all workers
+# These will be overridden by environment variables during deployment
+[vars]
+MCPHUB_BACKEND_URL = "http://localhost:3001"
+ALLOWED_ORIGINS = "*"
+MCPHUB_API_KEY = "API_KEY_PLACEHOLDER"
+
+# SSE Worker Configuration
+[env.sse]
+name = "sse"
+main = "src/sse.js"
+routes = [
+  { pattern = "sse.pixelium.workers.dev", zone_name = "pixelium.workers.dev" }
+]
+
+# Frontend Worker Configuration
+[env.frontend]
+name = "frontend"
+main = "src/frontend.js"
+routes = [
+  { pattern = "frontend.pixelium.workers.dev", zone_name = "pixelium.workers.dev" }
+]
+
+# Backend Worker Configuration
+[env.backend]
+name = "backend"
+main = "src/backend.js"
+routes = [
+  { pattern = "backend.pixelium.workers.dev", zone_name = "pixelium.workers.dev" }
+]
+

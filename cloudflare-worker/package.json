@@ -1,0 +1,20 @@
+{
+  "name": "mcphub-cloudflare-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Workers for MCPhub",
+  "scripts": {
+    "deploy": "bash deploy.sh",
+    "deploy:sse": "wrangler deploy --env sse",
+    "deploy:frontend": "wrangler deploy --env frontend",
+    "deploy:backend": "wrangler deploy --env backend",
+    "dev:sse": "wrangler dev --env sse",
+    "dev:frontend": "wrangler dev --env frontend",
+    "dev:backend": "wrangler dev --env backend",
+    "test": "bash test.sh"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
+

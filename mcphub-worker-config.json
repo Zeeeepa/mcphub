@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "MCPhub": {
+      "type": "sse",
+      "url": "http://mcp.pixelium.co.uk/sse",
+      "keepAliveInterval": 60000,
+      "owner": "admin",
+      "MCPhub_API": "API SET IN MCPhub"
+    }
+  }
+}
+
