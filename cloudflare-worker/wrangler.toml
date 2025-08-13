@@ -3,17 +3,16 @@ main = "src/index.js"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
+account_id = "2b2a1d3effa7f7fe4fe2a8c4e48681e3"
+
 [env.production]
 name = "mcp"
-route = { pattern = "mcp.pixeliumperfecto.co.uk/*", zone_name = "pixeliumperfecto.co.uk" }
-
-[env.development]
-name = "mcp-dev"
+workers_dev = true
 
 # Environment variables for the worker
 [vars]
-MCPHUB_BACKEND_URL = "http://localhost:3000"
-ALLOWED_ORIGINS = "https://pixeliumperfecto.co.uk,https://www.pixeliumperfecto.co.uk,http://localhost:3000"
+MCPHUB_BACKEND_URL = "http://localhost:3001"
+ALLOWED_ORIGINS = "*"
 
 # Build configuration
 [build]

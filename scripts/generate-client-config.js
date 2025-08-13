@@ -20,9 +20,11 @@ const args = process.argv.slice(2);
 const options = {
   deployment: 'local',
   domain: 'pixeliumperfecto.co.uk',
-  port: 3000,
+  port: 3001,
   output: 'mcphub-config.json',
-  generateApiKey: false
+  generateApiKey: false,
+  apiKey: '',
+  workerUrl: 'https://mcp.pixeliumperfecto.workers.dev'
 };
 
 // Parse arguments
@@ -39,6 +41,10 @@ for (let i = 0; i < args.length; i++) {
     options.output = args[++i];
   } else if (arg === '--generate-api-key') {
     options.generateApiKey = true;
+  } else if (arg === '--api-key' && i + 1 < args.length) {
+    options.apiKey = args[++i];
+  } else if (arg === '--worker-url' && i + 1 < args.length) {
+    options.workerUrl = args[++i];
   } else if (arg === '--help') {
     printHelp();
     process.exit(0);
@@ -54,15 +60,18 @@ Usage:
   node generate-client-config.js [options]
 
 Options:
-  --deployment <type>    Deployment type: local, cloudflare (default: local)
-  --domain <domain>      Domain name (default: pixeliumperfecto.co.uk)
-  --port <port>          Port number for local deployment (default: 3000)
+  --deployment <type>    Deployment type: local, cloudflare, worker (default: local)
+  --domain <domain>      Domain name for cloudflare deployment (default: pixeliumperfecto.co.uk)
+  --port <port>          Port number for local deployment (default: 3001)
+  --worker-url <url>     URL for Cloudflare Worker (default: https://mcp.pixeliumperfecto.workers.dev)
   --output <file>        Output file name (default: mcphub-config.json)
   --generate-api-key     Generate a new API key
+  --api-key <key>        Use specific API key
   --help                 Show this help message
 
 Examples:
   node generate-client-config.js --deployment cloudflare --domain example.com
+  node generate-client-config.js --deployment worker --worker-url https://mcp.example.workers.dev
   node generate-client-config.js --deployment local --port 8080
   `);
 }
@@ -75,11 +84,13 @@ function generateApiKey() {
 // Generate client configuration
 function generateConfig() {
   let url;
-  let apiKey = '';
+  let apiKey = options.apiKey;
   
   // Generate URL based on deployment type
   if (options.deployment === 'cloudflare') {
     url = `https://${options.domain}/sse`;
+  } else if (options.deployment === 'worker') {
+    url = `${options.workerUrl}/sse`;
   } else {
     url = `http://localhost:${options.port}/sse`;
   }
@@ -103,9 +114,9 @@ function generateConfig() {
     }
   };
   
-  // Add API key if generated
+  // Add API key if provided or generated
   if (apiKey) {
-    config.mcpServers.MCPhub.env = apiKey;
+    config.mcpServers.MCPhub.MCPhub_API = apiKey;
   }
   
   return config;
@@ -122,9 +133,13 @@ function writeConfig(config) {
 function main() {
   console.log('Generating MCPhub client configuration...');
   console.log(`Deployment type: ${options.deployment}`);
-  console.log(`Domain: ${options.domain}`);
   
-  if (options.deployment === 'local') {
+  if (options.deployment === 'cloudflare') {
+    console.log(`Domain: ${options.domain}`);
+  } else if (options.deployment === 'worker') {
+    console.log(`Worker URL: ${options.workerUrl}`);
+  } else {
+    console.log(`Domain: ${options.domain}`);
     console.log(`Port: ${options.port}`);
   }
   

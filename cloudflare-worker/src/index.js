@@ -8,7 +8,7 @@
 // Configuration (overridden by environment variables)
 const config = {
   // Backend MCPhub server URL
-  MCPHUB_BACKEND_URL: 'http://localhost:3000',
+  MCPHUB_BACKEND_URL: 'http://localhost:3001',
   
   // Allowed origins for CORS
   ALLOWED_ORIGINS: '*',
@@ -41,8 +41,13 @@ export default {
     }
     
     // Handle health check
-    if (path === '/health') {
-      return new Response(JSON.stringify({ status: 'ok', worker: 'mcphub-cloudflare' }), {
+    if (path === '/health' || path === '/') {
+      return new Response(JSON.stringify({ 
+        status: 'ok', 
+        worker: 'mcphub-cloudflare',
+        version: '1.0.0',
+        backend: config.MCPHUB_BACKEND_URL
+      }), {
         headers: {
           'Content-Type': 'application/json',
           ...getCorsHeaders(request)
@@ -165,6 +170,11 @@ async function handleSseRequest(request, env) {
   }
   
   try {
+    // Log the request if in debug mode
+    if (config.DEBUG) {
+      console.log(`SSE request to ${backendUrl.toString()}`);
+    }
+    
     // Fetch from backend with streaming enabled
     const response = await fetch(backendUrl.toString(), {
       method: 'GET',
@@ -175,15 +185,17 @@ async function handleSseRequest(request, env) {
         cacheEverything: false,
         minify: false,
         scrapeShield: false,
-        apps: false,
-        resolveOverride: new URL(config.MCPHUB_BACKEND_URL).hostname
+        apps: false
       }
     });
     
     // Check if response is successful
     if (!response.ok) {
       return new Response(
-        JSON.stringify({ error: `Backend error: ${response.status}` }), 
+        JSON.stringify({ 
+          error: `Backend error: ${response.status}`,
+          message: await response.text()
+        }), 
         {
           status: response.status,
           headers: {
@@ -214,7 +226,10 @@ async function handleSseRequest(request, env) {
   } catch (error) {
     // Handle connection errors
     return new Response(
-      JSON.stringify({ error: `Connection error: ${error.message}` }), 
+      JSON.stringify({ 
+        error: `Connection error: ${error.message}`,
+        backend_url: backendUrl.toString()
+      }), 
       {
         status: 502,
         headers: {
@@ -260,8 +275,7 @@ async function forwardRequest(request, env) {
         cacheEverything: false,
         minify: false,
         scrapeShield: false,
-        apps: false,
-        resolveOverride: new URL(config.MCPHUB_BACKEND_URL).hostname
+        apps: false
       }
     });
     
@@ -290,7 +304,10 @@ async function forwardRequest(request, env) {
   } catch (error) {
     // Handle connection errors
     return new Response(
-      JSON.stringify({ error: `Connection error: ${error.message}` }), 
+      JSON.stringify({ 
+        error: `Connection error: ${error.message}`,
+        backend_url: backendUrl.toString()
+      }), 
       {
         status: 502,
         headers: {

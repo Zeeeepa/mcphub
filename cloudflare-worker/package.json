@@ -1,21 +1,16 @@
 {
   "name": "mcphub-cloudflare-worker",
   "version": "1.0.0",
-  "description": "Cloudflare Worker for MCPhub SSE endpoint",
+  "description": "Cloudflare Worker for MCPhub",
   "main": "src/index.js",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "deploy:prod": "wrangler deploy --env production",
-    "format": "prettier --write \"src/**/*.js\""
+    "deploy": "wrangler deploy --env production"
   },
-  "author": "",
+  "author": "pixeliumperfecto@gmail.com",
   "license": "MIT",
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240129.0",
-    "eslint": "^8.56.0",
-    "prettier": "^3.2.5",
-    "wrangler": "^3.28.2"
+    "wrangler": "^3.0.0"
   }
 }
 
