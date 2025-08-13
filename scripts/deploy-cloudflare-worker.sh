@@ -1,131 +1,86 @@
 #!/bin/bash
 
-#########################################
-# Cloudflare Worker Deployment Script for MCPhub
-# Deploys a Cloudflare Worker to proxy MCP requests
-#########################################
+# Cloudflare Worker Deployment Script
+# This script deploys the MCPhub Cloudflare Worker using the Cloudflare API directly
 
-set -e
+# Configuration
+ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-"2b2a1d3effa7f7fe4fe2a8c4e48681e3"}
+API_KEY=${CLOUDFLARE_API_KEY:-"eae82cf159577a8838cc83612104c09c5a0d6"}
+WORKER_NAME=${CLOUDFLARE_WORKER_NAME:-"mcp"}
+BACKEND_URL=${MCPHUB_BACKEND_URL:-"http://pixeliumperfecto.co.uk:3001"}
+EMAIL=${EMAIL:-"pixeliumperfecto@gmail.com"}
 
-# Colors for output
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
+YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
-# Configuration from environment variables
-CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY:-""}
-CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-""}
-CLOUDFLARE_WORKER_NAME=${CLOUDFLARE_WORKER_NAME:-"mcp"}
-CLOUDFLARE_WORKER_URL=${CLOUDFLARE_WORKER_URL:-"https://mcp.pixeliumperfecto.workers.dev"}
-MCPHUB_BACKEND_URL=${MCPHUB_BACKEND_URL:-"http://localhost:3001"}
-EMAIL=${EMAIL:-""}
-
-# Paths
-WORKER_DIR="cloudflare-worker"
-LOG_FILE="/tmp/cloudflare-worker-deploy.log"
-
-# Function to log messages
-log_message() {
-    echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1" | tee -a "$LOG_FILE"
+# Log functions
+log() {
+  echo -e "${GREEN}[INFO]${NC} $1"
 }
 
-log_error() {
-    echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] ERROR:${NC} $1" | tee -a "$LOG_FILE"
+error() {
+  echo -e "${RED}[ERROR]${NC} $1"
+  exit 1
 }
 
-log_warning() {
-    echo -e "${YELLOW}[$(date '+%Y-%m-%d %H:%M:%S')] WARNING:${NC} $1" | tee -a "$LOG_FILE"
+warning() {
+  echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-log_info() {
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] INFO:${NC} $1" | tee -a "$LOG_FILE"
-}
-
-# Check for required environment variables
-if [ -z "$CLOUDFLARE_API_KEY" ]; then
-    log_error "CLOUDFLARE_API_KEY environment variable is required"
-    log_info "Please set it with: export CLOUDFLARE_API_KEY=your_api_key"
-    exit 1
+# Check if required environment variables are set
+if [ -z "$API_KEY" ]; then
+  error "CLOUDFLARE_API_KEY environment variable is required"
 fi
 
-if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-    log_error "CLOUDFLARE_ACCOUNT_ID environment variable is required"
-    log_info "Please set it with: export CLOUDFLARE_ACCOUNT_ID=your_account_id"
-    exit 1
+if [ -z "$ACCOUNT_ID" ]; then
+  error "CLOUDFLARE_ACCOUNT_ID environment variable is required"
 fi
 
-# Create log file
-touch "$LOG_FILE"
-log_message "Starting Cloudflare Worker deployment for MCPhub"
+# Get script directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+WORKER_DIR="$ROOT_DIR/cloudflare-worker"
+WORKER_FILE="$WORKER_DIR/src/index.js"
 
-# Install wrangler CLI if not present
-if ! command -v wrangler &> /dev/null; then
-    log_message "Installing Wrangler CLI..."
-    npm install -g wrangler
-    log_message "Wrangler CLI installed successfully"
-else
-    log_info "Wrangler CLI already installed: $(wrangler --version)"
+# Check if worker file exists
+if [ ! -f "$WORKER_FILE" ]; then
+  error "Worker file not found at $WORKER_FILE"
 fi
 
-# Setup wrangler authentication
-log_message "Setting up Wrangler authentication..."
-export CLOUDFLARE_API_TOKEN="$CLOUDFLARE_API_KEY"
-export CLOUDFLARE_ACCOUNT_ID="$CLOUDFLARE_ACCOUNT_ID"
+# Create temporary worker file with environment variables
+log "Creating temporary worker file with environment variables"
+TEMP_WORKER_FILE="$WORKER_DIR/worker-bundle.js"
+cp "$WORKER_FILE" "$TEMP_WORKER_FILE"
 
-# Update wrangler.toml with current configuration
-log_message "Updating wrangler configuration..."
-cd "$WORKER_DIR"
+# Deploy worker
+log "Deploying worker to Cloudflare"
+RESPONSE=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/scripts/$WORKER_NAME" \
+  -H "X-Auth-Email: $EMAIL" \
+  -H "X-Auth-Key: $API_KEY" \
+  -F "metadata={\"body_part\":\"script\",\"bindings\":[{\"name\":\"MCPHUB_BACKEND_URL\",\"type\":\"plain_text\",\"text\":\"$BACKEND_URL\"},{\"name\":\"ALLOWED_ORIGINS\",\"type\":\"plain_text\",\"text\":\"*\"}]}" \
+  -F "script=@$TEMP_WORKER_FILE")
 
-# Update wrangler.toml with current values
-cat > wrangler.toml <<EOF
-name = "$CLOUDFLARE_WORKER_NAME"
-main = "src/index.js"
-compatibility_date = "2024-01-01"
-compatibility_flags = ["nodejs_compat"]
-
-account_id = "$CLOUDFLARE_ACCOUNT_ID"
-
-[env.production]
-name = "$CLOUDFLARE_WORKER_NAME"
-workers_dev = true
-
-# Environment variables for the worker
-[vars]
-MCPHUB_BACKEND_URL = "$MCPHUB_BACKEND_URL"
-ALLOWED_ORIGINS = "*"
-
-# Build configuration
-[build]
-command = ""
-EOF
-
-log_message "Wrangler configuration updated"
-
-# Install worker dependencies
-log_message "Installing worker dependencies..."
-if [ -f "package.json" ]; then
-    npm install
+# Check if deployment was successful
+SUCCESS=$(echo "$RESPONSE" | grep -o '"success":true' || echo "")
+if [ -z "$SUCCESS" ]; then
+  error "Failed to deploy worker: $RESPONSE"
 fi
 
-# Deploy the worker
-log_message "Deploying Cloudflare Worker..."
-wrangler deploy --env production
-
-log_message "Worker deployed successfully to $CLOUDFLARE_WORKER_URL"
+# Clean up temporary file
+rm "$TEMP_WORKER_FILE"
 
 # Generate client configuration
-log_message "Generating client configuration..."
-cd ..
-
-# Create client configuration
-cat > mcphub-worker-config.json <<EOF
+log "Generating client configuration"
+CONFIG_FILE="$ROOT_DIR/mcphub-worker-config.json"
+cat > "$CONFIG_FILE" << EOF
 {
   "mcpServers": {
     "MCPhub": {
       "type": "sse",
-      "url": "$CLOUDFLARE_WORKER_URL/sse",
+      "url": "https://mcp.pixeliumperfecto.workers.dev/sse",
       "keepAliveInterval": 60000,
       "owner": "admin"
     }
@@ -133,12 +88,7 @@ cat > mcphub-worker-config.json <<EOF
 }
 EOF
 
-log_message "Client configuration generated at mcphub-worker-config.json"
-
-# Final instructions
-log_message "Cloudflare Worker deployment complete!"
-log_message "Your MCPhub instance is now accessible at $CLOUDFLARE_WORKER_URL/sse"
-log_message ""
-log_message "Client configuration is available in mcphub-worker-config.json"
-log_message "Use this configuration in your MCP client to connect to MCPhub"
+log "Deployment complete!"
+log "Your MCPhub instance is now accessible at https://mcp.pixeliumperfecto.workers.dev/sse"
+log "Client configuration is available at $CONFIG_FILE"
 
