@@ -4,11 +4,11 @@
 # This script deploys the MCPhub Cloudflare Worker using the Cloudflare API directly
 
 # Configuration
-ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-"2b2a1d3effa7f7fe4fe2a8c4e48681e3"}
-API_KEY=${CLOUDFLARE_API_KEY:-"eae82cf159577a8838cc83612104c09c5a0d6"}
+ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-""}
+API_KEY=${CLOUDFLARE_API_KEY:-""}
 WORKER_NAME=${CLOUDFLARE_WORKER_NAME:-"mcp"}
 BACKEND_URL=${MCPHUB_BACKEND_URL:-"http://pixeliumperfecto.co.uk:3001"}
-EMAIL=${EMAIL:-"pixeliumperfecto@gmail.com"}
+EMAIL=${EMAIL:-""}
 CUSTOM_DOMAIN=${CUSTOM_DOMAIN:-"mcp.pixelium.co.uk"}
 
 # Colors
@@ -38,6 +38,10 @@ fi
 
 if [ -z "$ACCOUNT_ID" ]; then
   error "CLOUDFLARE_ACCOUNT_ID environment variable is required"
+fi
+
+if [ -z "$EMAIL" ]; then
+  error "EMAIL environment variable is required"
 fi
 
 # Get script directory

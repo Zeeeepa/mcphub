@@ -12,8 +12,8 @@ const { spawn } = require('child_process');
 
 // Configuration
 const config = {
-  ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID || '2b2a1d3effa7f7fe4fe2a8c4e48681e3',
-  API_KEY: process.env.CLOUDFLARE_API_KEY || 'eae82cf159577a8838cc83612104c09c5a0d6',
+  ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID || '',
+  API_KEY: process.env.CLOUDFLARE_API_KEY || '',
   WORKER_NAME: process.env.CLOUDFLARE_WORKER_NAME || 'mcp',
   BACKEND_URL: process.env.MCPHUB_BACKEND_URL || 'http://pixeliumperfecto.co.uk:3001',
   CUSTOM_DOMAIN: process.env.CUSTOM_DOMAIN || 'mcp.pixelium.co.uk'
