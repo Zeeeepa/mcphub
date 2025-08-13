@@ -9,6 +9,7 @@ API_KEY=${CLOUDFLARE_API_KEY:-"eae82cf159577a8838cc83612104c09c5a0d6"}
 WORKER_NAME=${CLOUDFLARE_WORKER_NAME:-"mcp"}
 BACKEND_URL=${MCPHUB_BACKEND_URL:-"http://pixeliumperfecto.co.uk:3001"}
 EMAIL=${EMAIL:-"pixeliumperfecto@gmail.com"}
+CUSTOM_DOMAIN=${CUSTOM_DOMAIN:-"mcp.pixelium.co.uk"}
 
 # Colors
 RED='\033[0;31m'
@@ -80,15 +81,16 @@ cat > "$CONFIG_FILE" << EOF
   "mcpServers": {
     "MCPhub": {
       "type": "sse",
-      "url": "https://mcp.pixeliumperfecto.workers.dev/sse",
+      "url": "http://$CUSTOM_DOMAIN/sse",
       "keepAliveInterval": 60000,
-      "owner": "admin"
+      "owner": "admin",
+      "MCPhub_API": "API SET IN MCPhub"
     }
   }
 }
 EOF
 
 log "Deployment complete!"
-log "Your MCPhub instance is now accessible at https://mcp.pixeliumperfecto.workers.dev/sse"
+log "Your MCPhub instance is now accessible at http://$CUSTOM_DOMAIN/sse"
 log "Client configuration is available at $CONFIG_FILE"
 

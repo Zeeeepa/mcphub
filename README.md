@@ -29,6 +29,7 @@ To deploy the worker:
 CLOUDFLARE_API_KEY="your-api-key" \
 CLOUDFLARE_ACCOUNT_ID="your-account-id" \
 MCPHUB_BACKEND_URL="http://your-backend-url:3001" \
+CUSTOM_DOMAIN="mcp.pixelium.co.uk" \
 EMAIL="your-email@example.com" \
 ./scripts/deploy-cloudflare-worker.sh
 ```
@@ -42,7 +43,7 @@ After deploying the Cloudflare Worker, a client configuration file is generated 
   "mcpServers": {
     "MCPhub": {
       "type": "sse",
-      "url": "https://mcp.pixeliumperfecto.workers.dev/sse",
+      "url": "http://mcp.pixelium.co.uk/sse",
       "keepAliveInterval": 60000,
       "owner": "admin",
       "MCPhub_API": "API SET IN MCPhub"
@@ -54,8 +55,8 @@ After deploying the Cloudflare Worker, a client configuration file is generated 
 ## Endpoints
 
 - **Backend Health Check**: `http://localhost:3001/health`
-- **Cloudflare Worker Health Check**: `https://mcp.pixeliumperfecto.workers.dev/health`
-- **SSE Endpoint**: `https://mcp.pixeliumperfecto.workers.dev/sse`
+- **Cloudflare Worker Health Check**: `http://mcp.pixelium.co.uk/health`
+- **SSE Endpoint**: `http://mcp.pixelium.co.uk/sse`
 
 ## Development
 
