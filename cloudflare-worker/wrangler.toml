@@ -14,6 +14,7 @@ MCPHUB_API_KEY = "API SET IN MCPhub"
 [triggers]
 routes = [
   { pattern = "mcp.pixelium.workers.dev/*", zone_name = "pixelium.workers.dev" },
-  { pattern = "mcp.pixelium.co.uk/*", zone_name = "pixelium.co.uk" }
+  { pattern = "www.pixelium.co.uk/*", zone_name = "pixelium.co.uk" },
+  { pattern = "api.pixelium.co.uk/*", zone_name = "pixelium.co.uk" }
 ]
 

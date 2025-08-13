@@ -22,5 +22,7 @@ wrangler deploy
 
 echo "Deployment complete!"
 echo "Worker URL: https://mcp.pixelium.workers.dev"
-echo "Custom domain: https://mcp.pixelium.co.uk"
+echo "Frontend URL: https://www.pixelium.co.uk"
+echo "API URL: https://api.pixelium.co.uk"
+echo "SSE Endpoint: https://api.pixelium.co.uk/sse"
 

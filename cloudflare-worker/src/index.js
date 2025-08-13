@@ -43,8 +43,9 @@ addEventListener('fetch', event => {
  * @returns {Promise<Response>} - The response
  */
 async function handleRequest(request) {
-  // Get request URL
+  // Get request URL and hostname
   const url = new URL(request.url);
+  const hostname = url.hostname;
   const path = url.pathname;
   
   // Handle CORS preflight requests
@@ -52,8 +53,40 @@ async function handleRequest(request) {
     return handleCors(request);
   }
   
+  // Route based on hostname
+  if (hostname === 'www.pixelium.co.uk') {
+    // Frontend requests
+    return handleFrontendRequest(request);
+  } else if (hostname === 'api.pixelium.co.uk') {
+    // API requests
+    return handleApiRequest(request);
+  } else {
+    // Default handling (mcp.pixelium.workers.dev)
+    return handleDefaultRequest(request);
+  }
+}
+
+/**
+ * Handle frontend requests (www.pixelium.co.uk)
+ * @param {Request} request - The incoming request
+ * @returns {Promise<Response>} - The response
+ */
+async function handleFrontendRequest(request) {
+  // Forward to backend for static assets
+  return forwardRequest(request);
+}
+
+/**
+ * Handle API requests (api.pixelium.co.uk)
+ * @param {Request} request - The incoming request
+ * @returns {Promise<Response>} - The response
+ */
+async function handleApiRequest(request) {
+  const url = new URL(request.url);
+  const path = url.pathname;
+  
   // Handle health check
-  if (path === '/health' || path === '/') {
+  if (path === '/health') {
     return new Response(JSON.stringify({
       status: 'ok',
       worker: 'mcphub-cloudflare-worker',
@@ -89,7 +122,40 @@ async function handleRequest(request) {
     return forwardRequest(request);
   }
 
-  // Forward all other requests to backend (for frontend assets)
+  // Forward all other requests to backend
+  return forwardRequest(request);
+}
+
+/**
+ * Handle default requests (mcp.pixelium.workers.dev)
+ * @param {Request} request - The incoming request
+ * @returns {Promise<Response>} - The response
+ */
+async function handleDefaultRequest(request) {
+  const url = new URL(request.url);
+  const path = url.pathname;
+  
+  // Handle health check
+  if (path === '/health' || path === '/') {
+    return new Response(JSON.stringify({
+      status: 'ok',
+      worker: 'mcphub-cloudflare-worker',
+      version: '1.0.0',
+      backend: config.MCPHUB_BACKEND_URL,
+      endpoints: {
+        frontend: 'https://www.pixelium.co.uk',
+        api: 'https://api.pixelium.co.uk',
+        sse: 'https://api.pixelium.co.uk/sse'
+      }
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...getCorsHeaders(request)
+      }
+    });
+  }
+
+  // Forward all other requests to backend
   return forwardRequest(request);
 }
 

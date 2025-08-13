@@ -1,6 +1,6 @@
 # MCPhub Cloudflare Worker
 
-This Cloudflare Worker enables the deployment of MCPhub to Cloudflare, making it accessible through a custom domain.
+This Cloudflare Worker enables the deployment of MCPhub to Cloudflare, making it accessible through custom domains.
 
 ## Features
 
@@ -46,7 +46,9 @@ npm run dev
 ## URLs
 
 - Worker URL: https://mcp.pixelium.workers.dev
-- Custom domain: https://mcp.pixelium.co.uk
+- Frontend URL: https://www.pixelium.co.uk
+- API URL: https://api.pixelium.co.uk
+- SSE Endpoint: https://api.pixelium.co.uk/sse
 
 ## Endpoints
 
