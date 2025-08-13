@@ -15,12 +15,12 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration from environment variables
-CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY:-"eae82cf159577a8838cc83612104c09c5a0d6"}
-CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-"2b2a1d3effa7f7fe4fe2a8c4e48681e3"}
+CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY:-""}
+CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-""}
 CLOUDFLARE_WORKER_NAME=${CLOUDFLARE_WORKER_NAME:-"mcp"}
 CLOUDFLARE_WORKER_URL=${CLOUDFLARE_WORKER_URL:-"https://mcp.pixeliumperfecto.workers.dev"}
 MCPHUB_BACKEND_URL=${MCPHUB_BACKEND_URL:-"http://localhost:3001"}
-EMAIL=${EMAIL:-"pixeliumperfecto@gmail.com"}
+EMAIL=${EMAIL:-""}
 
 # Paths
 WORKER_DIR="cloudflare-worker"
@@ -42,6 +42,19 @@ log_warning() {
 log_info() {
     echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] INFO:${NC} $1" | tee -a "$LOG_FILE"
 }
+
+# Check for required environment variables
+if [ -z "$CLOUDFLARE_API_KEY" ]; then
+    log_error "CLOUDFLARE_API_KEY environment variable is required"
+    log_info "Please set it with: export CLOUDFLARE_API_KEY=your_api_key"
+    exit 1
+fi
+
+if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+    log_error "CLOUDFLARE_ACCOUNT_ID environment variable is required"
+    log_info "Please set it with: export CLOUDFLARE_ACCOUNT_ID=your_account_id"
+    exit 1
+fi
 
 # Create log file
 touch "$LOG_FILE"
