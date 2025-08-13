@@ -8,3 +8,12 @@ account_id = "2b2a1d3effa7f7fe4fe2a8c4e48681e3"
 [vars]
 MCPHUB_BACKEND_URL = "http://pixeliumperfecto.co.uk:3001"
 ALLOWED_ORIGINS = "*"
+MCPHUB_API_KEY = "API SET IN MCPhub"
+
+# Specify routes for the worker
+[triggers]
+routes = [
+  { pattern = "mcp.pixelium.workers.dev/*", zone_name = "pixelium.workers.dev" },
+  { pattern = "mcp.pixelium.co.uk/*", zone_name = "pixelium.co.uk" }
+]
+

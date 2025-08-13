@@ -3,6 +3,7 @@
  * 
  * This worker proxies requests to the MCPhub backend server,
  * handling SSE connections and CORS headers properly.
+ * It also serves the frontend static assets.
  */
 
 // Configuration (overridden by environment variables)
@@ -12,6 +13,9 @@ const config = {
   
   // Allowed origins for CORS
   ALLOWED_ORIGINS: ALLOWED_ORIGINS || '*',
+
+  // API key for authentication
+  MCPHUB_API_KEY: MCPHUB_API_KEY || 'API SET IN MCPhub',
 };
 
 // Event handler for incoming requests
@@ -62,8 +66,30 @@ async function handleRequest(request) {
       }
     });
   }
+
+  // Handle API key requests
+  if (path === '/api/key') {
+    return new Response(JSON.stringify({
+      api_key: config.MCPHUB_API_KEY
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...getCorsHeaders(request)
+      }
+    });
+  }
   
-  // Forward request to backend
+  // Forward SSE requests to backend
+  if (path === '/sse') {
+    return forwardRequest(request);
+  }
+
+  // Forward API requests to backend
+  if (path.startsWith('/api/')) {
+    return forwardRequest(request);
+  }
+
+  // Forward all other requests to backend (for frontend assets)
   return forwardRequest(request);
 }
 
@@ -95,8 +121,8 @@ function getCorsHeaders(request) {
   
   return {
     'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-auth-token',
     'Access-Control-Max-Age': '86400',
     'Access-Control-Allow-Credentials': 'true'
   };
