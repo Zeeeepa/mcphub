@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  # MCPHub service
+  mcphub:
+    image: samanhappy/mcphub:latest
+    container_name: mcphub
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./mcp_settings.json:/app/mcp_settings.json
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      # Uncomment if you're using a base path
+      # - BASE_PATH=/mcp
+    networks:
+      - mcphub-network
+
+  # Cloudflared service for Cloudflare Tunnel
+  cloudflared:
+    build:
+      context: .
+      dockerfile: Dockerfile.cloudflared
+    container_name: cloudflared
+    restart: unless-stopped
+    volumes:
+      - ./cloudflare-tunnel/config.yml:/etc/cloudflared/config.yml
+      - ~/.cloudflared:/etc/cloudflared
+    command: tunnel run
+    depends_on:
+      - mcphub
+    networks:
+      - mcphub-network
+
+networks:
+  mcphub-network:
+    driver: bridge
+

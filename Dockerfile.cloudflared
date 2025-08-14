@@ -1,0 +1,17 @@
+FROM ubuntu:22.04
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+# Install cloudflared
+RUN curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb && \
+    dpkg -i cloudflared.deb && \
+    rm cloudflared.deb
+# Create directory for credentials
+RUN mkdir -p /etc/cloudflared
+# Set working directory
+WORKDIR /etc/cloudflared
+# Default command
+CMD ["cloudflared", "--version"]
+
