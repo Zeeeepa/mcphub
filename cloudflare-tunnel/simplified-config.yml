@@ -1,0 +1,36 @@
+# Simplified Cloudflare Tunnel configuration for MCPHub
+# This configuration connects your local MCP server to Cloudflare's edge network
+tunnel: ${TUNNEL_ID}
+credentials-file: ${CREDENTIALS_FILE}
+
+# Ingress rules define how traffic is routed to your local services
+ingress:
+  # Route traffic to the local MCP server
+  - hostname: ${MCP_HOSTNAME}
+    service: http://localhost:${MCP_PORT}
+    originRequest:
+      # These settings are important for SSE connections
+      connectTimeout: 30s
+      noTLSVerify: true
+      disableChunkedEncoding: true
+      readTimeout: 24h
+      writeTimeout: 24h
+  
+  # Default catch-all rule (required)
+  - service: http_status:404
+
+# Tunnel settings
+originRequest:
+  noTLSVerify: true
+  disableChunkedEncoding: true
+  connectTimeout: 30s
+  readTimeout: 24h
+  writeTimeout: 24h
+
+# Metrics for monitoring
+metrics: 0.0.0.0:2000
+
+# Logging configuration
+logFile: ${LOG_FILE}
+loglevel: info
+
