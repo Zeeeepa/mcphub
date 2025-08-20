@@ -20,216 +20,270 @@ MCPHub makes it easy to manage and scale multiple MCP (Model Context Protocol) s
 - **Group-Based Access Control**: Organize servers into customizable groups for streamlined permissions management.
 - **Secure Authentication**: Built-in user management with role-based access powered by JWT and bcrypt.
 - **Docker-Ready**: Deploy instantly with our containerized setup.
+- **Cloudflare Integration**: Expose your local MCPHub server to the internet securely using Cloudflare Tunnel and Workers.
 
 ## 🔧 Quick Start
 
-### Configuration
+### Local Installation
 
-Create a `mcp_settings.json` file to customize your server settings:
+```bash
+# Clone the repository
+git clone https://github.com/Zeeeepa/mcphub.git
+cd mcphub
+
+# Install dependencies
+npm install
+
+# Start the server
+npm start
+```
+
+### Docker Installation
+
+```bash
+# Pull the image
+docker pull samanhappy/mcphub
+
+# Run the container
+docker run -p 3000:3000 -v $(pwd)/mcp_settings.json:/app/mcp_settings.json samanhappy/mcphub
+```
+
+### Docker Compose Installation
+
+```bash
+# Create a docker-compose.yml file
+cat > docker-compose.yml << EOL
+version: '3.8'
+services:
+  mcphub:
+    image: samanhappy/mcphub
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./mcp_settings.json:/app/mcp_settings.json
+EOL
+
+# Start the container
+docker-compose up -d
+```
+
+## 🌐 Exposing MCPHub to the Internet
+
+MCPHub can be exposed to the internet securely using Cloudflare Tunnel and Cloudflare Workers. This allows you to access your local MCPHub server from anywhere in the world without opening ports on your firewall.
+
+### Prerequisites
+
+- A Cloudflare account
+- A domain registered with Cloudflare (optional, but recommended)
+- Cloudflare API key and Account ID
+
+### Automated Setup
+
+We provide a set of scripts to automate the setup process:
+
+```bash
+# Clone the repository if you haven't already
+git clone https://github.com/Zeeeepa/mcphub.git
+cd mcphub
+
+# Make the deployment script executable
+chmod +x deploy.sh
+
+# Run the deployment script
+./deploy.sh
+```
+
+The script will:
+1. Create a `.env` file with your Cloudflare credentials
+2. Set up a Cloudflare Tunnel to securely expose your local MCPHub server
+3. Deploy a Cloudflare Worker to handle routing and request transformation
+4. Set up health monitoring for your deployment
+
+### Manual Setup
+
+If you prefer to set up the components manually:
+
+#### 1. Set up Cloudflare Tunnel
+
+```bash
+# Install cloudflared
+# On Debian/Ubuntu:
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
+sudo dpkg -i cloudflared.deb
+
+# Authenticate with Cloudflare
+cloudflared tunnel login
+
+# Create a new tunnel
+cloudflared tunnel create mcphub-tunnel
+
+# Configure the tunnel
+mkdir -p /etc/cloudflared
+cat > /etc/cloudflared/config.yml << EOL
+tunnel: YOUR_TUNNEL_ID
+credentials-file: /etc/cloudflared/credentials.json
+ingress:
+  - hostname: mcp.your-domain.com
+    service: http://localhost:3000
+  - service: http_status:404
+EOL
+
+# Create DNS record
+cloudflared tunnel route dns YOUR_TUNNEL_ID mcp.your-domain.com
+
+# Start the tunnel
+cloudflared tunnel run YOUR_TUNNEL_ID
+```
+
+#### 2. Set up Cloudflare Worker (Optional)
+
+If you want to add additional functionality like authentication or rate limiting:
+
+```bash
+# Install Wrangler
+npm install -g wrangler
+
+# Create a new worker
+mkdir -p cloudflare-worker
+cd cloudflare-worker
+
+# Create worker script
+cat > worker.js << EOL
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request))
+})
+
+async function handleRequest(request) {
+  const url = new URL(request.url)
+  url.hostname = "mcp.your-domain.com"
+  
+  return fetch(url.toString(), {
+    method: request.method,
+    headers: request.headers,
+    body: request.body
+  })
+}
+EOL
+
+# Deploy the worker
+wrangler publish
+```
+
+### Docker Compose Setup with Cloudflare Tunnel
+
+For a complete setup using Docker Compose:
+
+```bash
+# Create docker-compose.yml
+cat > docker-compose.yml << EOL
+version: '3.8'
+services:
+  mcphub:
+    image: samanhappy/mcphub
+    container_name: mcphub
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./mcp_settings.json:/app/mcp_settings.json
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+
+  cloudflared:
+    image: cloudflare/cloudflared
+    container_name: cloudflared
+    restart: unless-stopped
+    volumes:
+      - ./cloudflare-tunnel/config.yml:/etc/cloudflared/config.yml
+      - ~/.cloudflared:/etc/cloudflared
+    command: tunnel run
+    depends_on:
+      - mcphub
+EOL
+
+# Start the services
+docker-compose up -d
+```
+
+## 📝 Configuration
+
+### Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```
+# MCPHub Configuration
+PORT=3000
+NODE_ENV=development
+BASE_PATH=
+
+# Cloudflare Configuration
+CLOUDFLARE_EMAIL=your-email@example.com
+CLOUDFLARE_API_KEY=your-api-key
+CLOUDFLARE_ACCOUNT_ID=your-account-id
+CLOUDFLARE_WORKER_NAME=dashboard
+DOMAIN=example.com
+CLOUDFLARE_WORKER_URL=https://dashboard.example.com.workers.dev
+
+# Alert Configuration
+ALERT_EMAIL=alerts@example.com
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/xxx/yyy/zzz
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxx/yyy
+```
+
+### MCP Settings
+
+Create a `mcp_settings.json` file in the root directory with your MCP server configuration:
 
 ```json
 {
-  "mcpServers": {
-    "amap": {
-      "command": "npx",
-      "args": ["-y", "@amap/amap-maps-mcp-server"],
-      "env": {
-        "AMAP_MAPS_API_KEY": "your-api-key"
-      }
+  "servers": [
+    {
+      "id": "server1",
+      "name": "Server 1",
+      "description": "First MCP server",
+      "url": "http://localhost:8080",
+      "groups": ["group1"]
     },
-    "playwright": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest", "--headless"]
-    },
-    "fetch": {
-      "command": "uvx",
-      "args": ["mcp-server-fetch"]
-    },
-    "slack": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-slack"],
-      "env": {
-        "SLACK_BOT_TOKEN": "your-bot-token",
-        "SLACK_TEAM_ID": "your-team-id"
-      }
+    {
+      "id": "server2",
+      "name": "Server 2",
+      "description": "Second MCP server",
+      "url": "http://localhost:8081",
+      "groups": ["group2"]
     }
-  }
+  ],
+  "groups": [
+    {
+      "id": "group1",
+      "name": "Group 1",
+      "description": "First group"
+    },
+    {
+      "id": "group2",
+      "name": "Group 2",
+      "description": "Second group"
+    }
+  ]
 }
 ```
 
-### Docker Deployment
+## 🔒 Security Considerations
 
-**Recommended**: Mount your custom config:
+When exposing your MCPHub server to the internet, consider the following security measures:
 
-```bash
-docker run -p 3000:3000 -v ./mcp_settings.json:/app/mcp_settings.json -v ./data:/app/data samanhappy/mcphub
-```
+1. **Authentication**: Enable authentication in MCPHub to prevent unauthorized access.
+2. **Rate Limiting**: Use Cloudflare's rate limiting features to prevent abuse.
+3. **IP Restrictions**: Configure Cloudflare to only allow access from specific IP addresses.
+4. **HTTPS**: Ensure all connections use HTTPS to encrypt data in transit.
+5. **Regular Updates**: Keep MCPHub, Cloudflare Tunnel, and all dependencies up to date.
 
-or run with default settings:
+## 🤝 Contributing
 
-```bash
-docker run -p 3000:3000 samanhappy/mcphub
-```
-
-### Access the Dashboard
-
-Open `http://localhost:3000` and log in with your credentials.
-
-> **Note**: Default credentials are `admin` / `admin123`.
-
-**Dashboard Overview**:
-
-- Live status of all MCP servers
-- Enable/disable or reconfigure servers
-- Group management for organizing servers
-- User administration for access control
-
-### Streamable HTTP Endpoint
-
-> As of now, support for streaming HTTP endpoints varies across different AI clients. If you encounter issues, you can use the SSE endpoint or wait for future updates.
-
-Connect AI clients (e.g., Claude Desktop, Cursor, DeepChat, etc.) via:
-
-```
-http://localhost:3000/mcp
-```
-
-This endpoint provides a unified streamable HTTP interface for all your MCP servers. It allows you to:
-
-- Send requests to any configured MCP server
-- Receive responses in real-time
-- Easily integrate with various AI clients and tools
-- Use the same endpoint for all servers, simplifying your integration process
-
-**Smart Routing (Experimental)**:
-
-Smart Routing is MCPHub's intelligent tool discovery system that uses vector semantic search to automatically find the most relevant tools for any given task.
-
-```
-http://localhost:3000/mcp/$smart
-```
-
-**How it Works:**
-
-1. **Tool Indexing**: All MCP tools are automatically converted to vector embeddings and stored in PostgreSQL with pgvector
-2. **Semantic Search**: User queries are converted to vectors and matched against tool embeddings using cosine similarity
-3. **Intelligent Filtering**: Dynamic thresholds ensure relevant results without noise
-4. **Precise Execution**: Found tools can be directly executed with proper parameter validation
-
-**Setup Requirements:**
-
-![Smart Routing](assets/smart-routing.png)
-
-To enable Smart Routing, you need:
-
-- PostgreSQL with pgvector extension
-- OpenAI API key (or compatible embedding service)
-- Enable Smart Routing in MCPHub settings
-
-**Group-Specific Endpoints (Recommended)**:
-
-![Group Management](assets/group.png)
-
-For targeted access to specific server groups, use the group-based HTTP endpoint:
-
-```
-http://localhost:3000/mcp/{group}
-```
-
-Where `{group}` is the ID or name of the group you created in the dashboard. This allows you to:
-
-- Connect to a specific subset of MCP servers organized by use case
-- Isolate different AI tools to access only relevant servers
-- Implement more granular access control for different environments or teams
-
-**Server-Specific Endpoints**:
-For direct access to individual servers, use the server-specific HTTP endpoint:
-
-```
-http://localhost:3000/mcp/{server}
-```
-
-Where `{server}` is the name of the server you want to connect to. This allows you to access a specific MCP server directly.
-
-> **Note**: If the server name and group name are the same, the group name will take precedence.
-
-### SSE Endpoint (Deprecated in Future)
-
-Connect AI clients (e.g., Claude Desktop, Cursor, DeepChat, etc.) via:
-
-```
-http://localhost:3000/sse
-```
-
-For smart routing, use:
-
-```
-http://localhost:3000/sse/$smart
-```
-
-For targeted access to specific server groups, use the group-based SSE endpoint:
-
-```
-http://localhost:3000/sse/{group}
-```
-
-For direct access to individual servers, use the server-specific SSE endpoint:
-
-```
-http://localhost:3000/sse/{server}
-```
-
-## 🧑‍💻 Local Development
-
-```bash
-git clone https://github.com/samanhappy/mcphub.git
-cd mcphub
-pnpm install
-pnpm dev
-```
-
-This starts both frontend and backend in development mode with hot-reloading.
-
-> For windows users, you may need to start the backend server and frontend separately: `pnpm backend:dev`, `pnpm frontend:dev`.
-
-## 🛠️ Common Issues
-
-### Using Nginx as a Reverse Proxy
-
-If you are using Nginx to reverse proxy MCPHub, please make sure to add the following configuration in your Nginx setup:
-
-```nginx
-proxy_buffering off
-```
-
-## 🔍 Tech Stack
-
-- **Backend**: Node.js, Express, TypeScript
-- **Frontend**: React, Vite, Tailwind CSS
-- **Auth**: JWT & bcrypt
-- **Protocol**: Model Context Protocol SDK
-
-## 👥 Contributing
-
-Contributions of any kind are welcome!
-
-- New features & optimizations
-- Documentation improvements
-- Bug reports & fixes
-- Translations & suggestions
-
-Welcome to join our [Discord community](https://discord.gg/qMKNsn5Q) for discussions and support.
-
-## ❤️ Sponsor
-
-If you like this project, maybe you can consider:
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/samanhappy)
-
-## 🌟 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=samanhappy/mcphub&type=Date)](https://www.star-history.com/#samanhappy/mcphub&Date)
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
-Licensed under the [Apache 2.0 License](LICENSE).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
