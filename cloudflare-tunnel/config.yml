@@ -1,0 +1,51 @@
+# Cloudflare Tunnel configuration for MCPHub
+# This configuration connects your local MCP server to Cloudflare's edge network
+# The tunnel ID will be generated when you create a tunnel
+# Replace YOUR_TUNNEL_ID with your actual tunnel ID after creation
+tunnel: YOUR_TUNNEL_ID
+credentials-file: /etc/cloudflared/credentials.json
+# Ingress rules define how traffic is routed to your local services
+ingress:
+  # Route all traffic to the local MCP server
+  - hostname: dashboard.pixelium.workers.dev
+    service: http://localhost:3000
+    originRequest:
+      # These settings are important for SSE connections
+      connectTimeout: 30s
+      noTLSVerify: true
+      # Disable buffering for SSE connections
+      disableChunkedEncoding: true
+      # Increase timeouts for long-lived connections
+      readTimeout: 24h
+      writeTimeout: 24h
+      
+  # You can add additional hostnames if needed
+  # For example, if you want to use a subdomain of pixelium.uk
+  - hostname: mcp.pixelium.uk
+    service: http://localhost:3000
+    originRequest:
+      connectTimeout: 30s
+      noTLSVerify: true
+      disableChunkedEncoding: true
+      readTimeout: 24h
+      writeTimeout: 24h
+  
+  # Default catch-all rule (required)
+  - service: http_status:404
+# Tunnel settings
+# No need to expose the tunnel to the internet directly
+originRequest:
+  # Important for SSE connections
+  noTLSVerify: true
+  # Disable buffering for SSE connections
+  disableChunkedEncoding: true
+  # Increase timeouts for long-lived connections
+  connectTimeout: 30s
+  readTimeout: 24h
+  writeTimeout: 24h
+# Metrics for monitoring
+metrics: 0.0.0.0:2000
+# Logging configuration
+logFile: /var/log/cloudflared.log
+loglevel: info
+
