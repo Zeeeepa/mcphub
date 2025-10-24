@@ -1,0 +1,17 @@
+# Wrangler configuration for MCPHub Cloudflare Worker
+name = "dashboard"
+type = "javascript"
+account_id = ""  # Will be replaced during deployment
+workers_dev = true
+compatibility_date = "2023-09-01"
+# Main worker script
+main = "worker.js"
+# Environment variables
+[vars]
+MCP_HOST = "localhost:3000"  # Will be replaced during deployment
+# Production environment
+[env.production]
+workers_dev = false
+route = ""  # Will be replaced during deployment
+zone_id = ""  # Will be replaced during deployment
+
