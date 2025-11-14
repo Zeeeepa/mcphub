@@ -1,0 +1,45 @@
+{
+  "manifest_version": "0.3",
+  "name": "mercury-spec-ops",
+  "version": "0.1.2",
+  "display_name": "Mercury Spec Ops",
+  "description": "Modular MCP server for dynamic prompt generation and software development analysis tools",
+  "long_description": "Mercury Spec Ops provides intelligent prompt assembly for PRD generation, codebase analysis, and bug analysis with support for 31 technology stacks. It offers templates and tools for comprehensive software development workflows including architecture analysis, security reviews, performance optimization, and more.",
+  "author": {
+    "name": "n0zer0d4y",
+    "url": "https://github.com/n0zer0d4y"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/n0zer0d4y/mercury-spec-ops"
+  },
+  "homepage": "https://github.com/n0zer0d4y/mercury-spec-ops",
+  "documentation": "https://github.com/n0zer0d4y/mercury-spec-ops#readme",
+  "keywords": [
+    "mcp",
+    "prompt-engineering",
+    "software-analysis",
+    "prd",
+    "codebase-analysis",
+    "bug-analysis",
+    "development-tools"
+  ],
+  "server": {
+    "type": "node",
+    "entry_point": "npx",
+    "mcp_config": {
+      "command": "npx",
+      "args": ["-y", "@n0zer0d4y/mercury-spec-ops@latest"],
+      "env": {}
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=20.0.0"
+    }
+  },
+  "user_config": {}
+}
+
