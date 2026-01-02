@@ -1,0 +1,54 @@
+{
+  "manifest_version": "0.3",
+  "name": "mcp-docs-server",
+  "version": "1.0.0",
+  "display_name": "MCP Docs Server",
+  "description": "Lightweight MCP server for local documentation access and search",
+  "long_description": "MCP Docs Server provides direct access to your local documentation files. It reads markdown files and exposes their contents through powerful search and overview tools. Perfect for maintaining project documentation, technical specs, and knowledge bases accessible to AI assistants.",
+  "author": {
+    "name": "UnlockMCP",
+    "url": "https://github.com/Unlock-MCP"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Unlock-MCP/mcp-docs-server"
+  },
+  "homepage": "https://github.com/Unlock-MCP/mcp-docs-server",
+  "documentation": "https://github.com/Unlock-MCP/mcp-docs-server#readme",
+  "keywords": [
+    "mcp",
+    "documentation",
+    "markdown",
+    "search",
+    "knowledge-base",
+    "docs"
+  ],
+  "server": {
+    "type": "python",
+    "entry_point": "server/mcp_context_server.py",
+    "mcp_config": {
+      "command": "python3",
+      "args": ["${__dirname}/server/mcp_context_server.py"],
+      "env": {
+        "CONTEXT_FILE": "${user_config.context_file}"
+      }
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "python": ">=3.11"
+    }
+  },
+  "user_config": {
+    "context_file": {
+      "type": "file",
+      "title": "Documentation File",
+      "description": "Path to your markdown documentation file (context.md)",
+      "required": true,
+      "default": "${HOME}/context.md"
+    }
+  }
+}
+
