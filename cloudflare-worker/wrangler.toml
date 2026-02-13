@@ -1,0 +1,20 @@
+name = "mcp"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+account_id = "2b2a1d3effa7f7fe4fe2a8c4e48681e3"
+
+[env.production]
+name = "mcp"
+workers_dev = true
+
+# Environment variables for the worker
+[vars]
+MCPHUB_BACKEND_URL = "http://localhost:3001"
+ALLOWED_ORIGINS = "*"
+
+# Build configuration
+[build]
+command = ""
+
