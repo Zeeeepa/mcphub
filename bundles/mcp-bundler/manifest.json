@@ -1,0 +1,51 @@
+{
+  "manifest_version": "0.3",
+  "name": "mcp-bundler",
+  "version": "1.0.0",
+  "display_name": "MCP Bundler",
+  "description": "Combine multiple MCP servers into a single unified endpoint",
+  "long_description": "MCP Bundler enables you to bundle multiple MCP servers together into a single composite server. This wrapper demonstrates bundling Mercury Spec Ops and other servers. You can customize which sub-servers are included and configure their environment variables through a unified interface.",
+  "author": {
+    "name": "wrtnlabs",
+    "url": "https://github.com/wrtnlabs"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wrtnlabs/mcp-bundler"
+  },
+  "homepage": "https://github.com/wrtnlabs/mcp-bundler",
+  "documentation": "https://github.com/wrtnlabs/mcp-bundler#readme",
+  "keywords": [
+    "mcp",
+    "bundler",
+    "composite",
+    "multi-server",
+    "aggregation"
+  ],
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.js"],
+      "env": {}
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  },
+  "user_config": {
+    "context_file": {
+      "type": "file",
+      "title": "Documentation File (Optional)",
+      "description": "Path to markdown documentation file if using docs-server sub-server",
+      "required": false,
+      "default": "${HOME}/context.md"
+    }
+  }
+}
+

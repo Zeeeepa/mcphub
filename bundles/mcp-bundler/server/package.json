@@ -1,0 +1,28 @@
+{
+  "name": "mcp-bundler-wrapper",
+  "version": "1.0.0",
+  "description": "MCP Bundler wrapper server for combining multiple MCP servers",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "mcp-bundler-wrapper": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@wrtnlabs/mcp-bundler": "^0.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "bundler",
+    "mcp-server",
+    "composite"
+  ],
+  "author": "mcphub",
+  "license": "MIT"
+}
+
